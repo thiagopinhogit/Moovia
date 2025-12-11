@@ -13,7 +13,7 @@ import HistoryScreen from '../screens/HistoryScreen';
 import PurchaseSuccessScreen from '../screens/PurchaseSuccessScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const ONBOARDING_KEY = '@lumo_onboarding_completed';
+const ONBOARDING_KEY = '@moovia_onboarding_completed';
 
 export default function Navigation() {
   const [showSplash, setShowSplash] = useState(true);

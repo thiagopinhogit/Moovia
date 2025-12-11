@@ -109,7 +109,7 @@ Copie a URL e cole em `src/constants/aiModels.ts`:
 ```typescript
 {
   id: 'lambda-secure',
-  displayName: 'Lumo AI (Secure)',
+  displayName: 'Moovia AI (Secure)',
   name: 'gemini-3-pro-image-preview',
   provider: 'lambda',
   apiUrl: 'COLE_A_URL_AQUI', // ← Cole a URL completa aqui
@@ -167,7 +167,7 @@ cd lambda
 ## 📊 Ver Logs em Tempo Real
 
 ```bash
-aws logs tail /aws/lambda/lumo-ai-image-generation --follow --region sa-east-1
+aws logs tail /aws/lambda/moovia-ai-video-generation --follow --region sa-east-1
 ```
 
 ---

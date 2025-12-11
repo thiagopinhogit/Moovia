@@ -5,7 +5,7 @@
 
 set -e  # Para se houver erro
 
-echo "🚀 Iniciando deploy da Lambda Lumo AI..."
+echo "🚀 Iniciando deploy da Lambda Moovia AI..."
 
 # Cores para output
 GREEN='\033[0;32m'
@@ -14,11 +14,11 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Configurações
-FUNCTION_NAME="lumo-ai-image-generation"
+FUNCTION_NAME="moovia-ai-video-generation"
 REGION="sa-east-1"
 RUNTIME="nodejs20.x"
 HANDLER="dist/index.handler"
-ROLE_NAME="lumo-lambda-execution-role"
+ROLE_NAME="moovia-lambda-execution-role"
 MEMORY=512
 TIMEOUT=120
 

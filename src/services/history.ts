@@ -7,7 +7,7 @@ export interface HistoryItem {
   createdAt: number;
 }
 
-const HISTORY_KEY = '@lumo_history';
+const HISTORY_KEY = '@moovia_history';
 
 export const saveToHistory = async (imageUri: string, description: string): Promise<void> => {
   try {

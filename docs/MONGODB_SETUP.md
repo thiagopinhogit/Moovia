@@ -1,6 +1,6 @@
 # 🍃 MongoDB Atlas Setup Guide
 
-Guia completo para configurar MongoDB Atlas para o Lumo AI.
+Guia completo para configurar MongoDB Atlas para o Moovia AI.
 
 ---
 
@@ -19,7 +19,7 @@ Guia completo para configurar MongoDB Atlas para o Lumo AI.
 ```
 Cloud Provider: AWS
 Region: São Paulo (sa-east-1)
-Cluster Name: lumo-cluster
+Cluster Name: moovia-cluster
 Cluster Tier: M0 Sandbox (FREE)
 ```
 
@@ -37,7 +37,7 @@ Clique em **"Create Cluster"** (leva ~3-5 minutos)
 
 ```
 Authentication Method: Password
-Username: lumo_admin
+Username: moovia_admin
 Password: [gere uma senha forte]
 Database User Privileges: Read and write to any database
 ```
@@ -79,14 +79,14 @@ Comment: Allow from anywhere (development only)
 6. Copie o connection string:
 
 ```
-mongodb+srv://lumo_admin:<password>@lumo-cluster.xxxxx.mongodb.net/?retryWrites=true&w=majority
+mongodb+srv://moovia_admin:<password>@moovia-cluster.xxxxx.mongodb.net/?retryWrites=true&w=majority
 ```
 
 7. **Substitua `<password>`** pela senha real
 8. **Adicione o database name** antes do `?`:
 
 ```
-mongodb+srv://lumo_admin:SuaSenha@lumo-cluster.xxxxx.mongodb.net/lumo?retryWrites=true&w=majority
+mongodb+srv://moovia_admin:SuaSenha@moovia-cluster.xxxxx.mongodb.net/moovia?retryWrites=true&w=majority
 ```
 
 ---
@@ -103,20 +103,20 @@ mongodb+srv://lumo_admin:SuaSenha@lumo-cluster.xxxxx.mongodb.net/lumo?retryWrite
 ### Criar database:
 
 1. Clique em **"Create Database"**
-2. Database Name: **lumo**
+2. Database Name: **moovia**
 3. Collection Name: **api_usage**
 4. Clique em **"Create Database"**
 
 ### Criar collections adicionais:
 
-1. No database **lumo**, clique em **"+"**
+1. No database **moovia**, clique em **"+"**
 2. Collection Name: **api_requests**
 3. Repita para: **cost_tracking**
 
 ### Via MongoDB Shell (alternativo):
 
 ```javascript
-use lumo
+use moovia
 
 db.createCollection("api_usage")
 db.createCollection("api_requests")
@@ -159,7 +159,7 @@ db.createCollection("cost_tracking")
 ### Via MongoDB Shell:
 
 ```javascript
-use lumo
+use moovia
 
 // api_usage
 db.api_usage.createIndex({ userId: 1 }, { unique: true })
@@ -183,7 +183,7 @@ db.cost_tracking.createIndex({ date: -1 }, { unique: true })
 ```javascript
 const mongoose = require('mongoose');
 
-const uri = 'mongodb+srv://lumo_admin:SuaSenha@lumo-cluster.xxxxx.mongodb.net/lumo?retryWrites=true&w=majority';
+const uri = 'mongodb+srv://moovia_admin:SuaSenha@moovia-cluster.xxxxx.mongodb.net/moovia?retryWrites=true&w=majority';
 
 mongoose.connect(uri)
   .then(() => console.log('✅ MongoDB connected!'))
@@ -202,7 +202,7 @@ node test-connection.js
 ### Adicione a variável de ambiente:
 
 ```
-MONGODB_URI = mongodb+srv://lumo_admin:SuaSenha@lumo-cluster.xxxxx.mongodb.net/lumo?retryWrites=true&w=majority
+MONGODB_URI = mongodb+srv://moovia_admin:SuaSenha@moovia-cluster.xxxxx.mongodb.net/moovia?retryWrites=true&w=majority
 ```
 
 **⚠️ NUNCA commite a connection string no Git!**
@@ -386,7 +386,7 @@ Solução:
 - [ ] Usuário criado com senha forte
 - [ ] Network Access configurado (0.0.0.0/0)
 - [ ] Connection string copiada
-- [ ] Database `lumo` criada
+- [ ] Database `moovia` criada
 - [ ] 3 collections criadas (api_usage, api_requests, cost_tracking)
 - [ ] Índices criados
 - [ ] TTL index configurado

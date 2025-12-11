@@ -203,7 +203,7 @@ Requests per minute: 60
 
 ### 1. Autenticação forte:
 ```
-Username: lumo_admin
+Username: moovia_admin
 Password: Min 16 caracteres, letras+números+símbolos
 2FA: Habilitado na conta MongoDB Atlas
 ```
@@ -216,7 +216,7 @@ Produção: IPs específicos da Lambda
 
 ### 3. Database permissions:
 ```
-User: readWrite no database 'lumo' apenas
+User: readWrite no database 'moovia' apenas
 Não tem acesso a outros databases
 ```
 
@@ -274,7 +274,7 @@ Action: SNS → Email
 # 2. Testar com a nova chave
 # 3. Atualizar variável na Lambda
 aws lambda update-function-configuration \
-  --function-name lumo-ai-image-generation \
+  --function-name moovia-ai-video-generation \
   --environment Variables={GOOGLE_API_KEY=nova_chave_aqui,...}
 # 4. Revogar chave antiga
 ```

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { Platform } from 'react-native';
-import subscriptionService, { LUMO_PRO_ENTITLEMENT } from '../services/subscription';
+import subscriptionService, { MOOVIA_PRO_ENTITLEMENT } from '../services/subscription';
 import Purchases, { CustomerInfo } from 'react-native-purchases';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -63,7 +63,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   };
 
   const updateSubscriptionStatus = async (customerInfo: any) => {
-    const hasProAccess = typeof customerInfo.entitlements.active[LUMO_PRO_ENTITLEMENT] !== 'undefined';
+    const hasProAccess = typeof customerInfo.entitlements.active[MOOVIA_PRO_ENTITLEMENT] !== 'undefined';
     setIsPro(hasProAccess);
     console.log('Pro status:', hasProAccess);
     

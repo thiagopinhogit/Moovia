@@ -1,5 +1,5 @@
 /**
- * AWS Lambda Handler - Lumo AI Image Generation
+ * AWS Lambda Handler - Moovia AI Video Generation
  * Handles image generation requests with subscription validation and cost tracking
  */
 

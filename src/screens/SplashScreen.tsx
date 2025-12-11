@@ -9,6 +9,7 @@ import {
   Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import COLORS from '../constants/colors';
 
 const { width, height } = Dimensions.get('window');
 
@@ -82,9 +83,9 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       <StatusBar barStyle="light-content" />
       <Animated.View style={{ flex: 1, opacity: screenFadeAnim }}>
         <LinearGradient
-          colors={['#5B3F9E', '#3D2B7A', '#2A1A5E']}
+          colors={COLORS.gradients.darkBackground}
           start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+          end={{ x: 0, y: 1 }}
           style={styles.gradient}
         >
           <Animated.View

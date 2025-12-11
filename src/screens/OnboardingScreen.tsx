@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../types';
 import BeforeAfterCard from '../components/BeforeAfterCard';
 import { useSubscription } from '../context/SubscriptionContext';
+import COLORS from '../constants/colors';
 
 const { width, height } = Dimensions.get('window');
 const CAROUSEL_CARD_WIDTH = width * 0.36;
@@ -30,7 +31,7 @@ type OnboardingScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
 };
 
-const STORAGE_KEY = '@lumo_onboarding_completed';
+const STORAGE_KEY = '@moovia_onboarding_completed';
 
 export default function OnboardingScreen({ navigation }: OnboardingScreenProps) {
   const { t } = useTranslation();
@@ -241,7 +242,7 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
   const renderWelcomePage = () => (
     <View style={styles.pageContainer}>
       <LinearGradient
-        colors={['#5B3F9E', '#3D2B7A', '#2A1A5E']}
+        colors={COLORS.gradients.darkBackground}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.welcomeContainer}
@@ -297,7 +298,7 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
               >
                 <View style={styles.getStartedButton}>
                   <Text style={styles.getStartedButtonText}>{t('onboarding.welcome.button')}</Text>
-                  <Ionicons name="arrow-forward" size={20} color="#5B3F9E" />
+                  <Ionicons name="arrow-forward" size={20} color={COLORS.background.primary} />
                 </View>
               </TouchableOpacity>
 
@@ -331,7 +332,7 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
     return (
       <View style={styles.pageContainer}>
         <LinearGradient
-          colors={['#5B3F9E', '#3D2B7A', '#2A1A5E']}
+          colors={COLORS.gradients.darkBackground}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.tutorialContainer}
@@ -479,7 +480,7 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#2A1A5E',
+    backgroundColor: COLORS.background.primary,
   },
   pageContainer: {
     width,
@@ -545,7 +546,7 @@ const styles = StyleSheet.create({
   getStartedButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#5B3F9E',
+    color: COLORS.text.primary,
     letterSpacing: 0.3,
   },
   footerContainer: {

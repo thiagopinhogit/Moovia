@@ -14,7 +14,7 @@ npm install
 Certifique-se que o arquivo `lambda/.env` está preenchido:
 
 ```bash
-MONGODB_URI=mongodb+srv://thiago_db_user:Mwa8ZFR5avRPm4hC@lumoai.rclwsyv.mongodb.net/lumo?retryWrites=true&w=majority&appName=lumoai
+MONGODB_URI=mongodb+srv://thiago_db_user:Mwa8ZFR5avRPm4hC@mooviaai.rclwsyv.mongodb.net/moovia?retryWrites=true&w=majority&appName=mooviaai
 GOOGLE_API_KEY=AIzaSyDA_ZHIAEU0nB18w_NYWPuMXdzWmyGSLLM
 GEMINI_MODEL=gemini-3-pro-image-preview
 RATE_LIMIT_FREE=0

@@ -14,6 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../navigation';
 import * as Haptics from 'expo-haptics';
+import COLORS from '../constants/colors';
 
 type PurchaseSuccessRouteProp = RouteProp<RootStackParamList, 'PurchaseSuccess'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -165,13 +166,13 @@ export default function PurchaseSuccessScreen() {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: COLORS.ui.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   modalContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface.primary,
     borderRadius: 24,
     padding: 32,
     width: width - 48,
@@ -193,10 +194,10 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#4CAF50',
+    backgroundColor: COLORS.status.success,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#4CAF50',
+    shadowColor: COLORS.status.success,
     shadowOffset: {
       width: 0,
       height: 6,
@@ -212,58 +213,58 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#000',
+    color: COLORS.text.primary,
     textAlign: 'center',
     marginBottom: 20,
   },
   creditsBox: {
-    backgroundColor: '#FFF9E6',
+    backgroundColor: COLORS.opacity.white10,
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
     marginBottom: 16,
     width: '100%',
     borderWidth: 2,
-    borderColor: '#FFD700',
+    borderColor: COLORS.special.gold,
   },
   creditsAmount: {
     fontSize: 36,
     fontWeight: '800',
-    color: '#000',
+    color: COLORS.text.primary,
     marginTop: 8,
   },
   creditsLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: COLORS.text.secondary,
     marginTop: 4,
   },
   subscriptionBox: {
-    backgroundColor: '#F0E6FF',
+    backgroundColor: COLORS.opacity.violet20,
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
     marginBottom: 16,
     width: '100%',
     borderWidth: 2,
-    borderColor: '#5B3F9E',
+    borderColor: COLORS.cta.secondary,
   },
   subscriptionName: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#000',
+    color: COLORS.text.primary,
     marginTop: 8,
     textAlign: 'center',
   },
   subscriptionLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: COLORS.text.secondary,
     marginTop: 4,
   },
   description: {
     fontSize: 14,
-    color: '#999',
+    color: COLORS.text.secondary,
     textAlign: 'center',
     marginTop: 8,
   },

@@ -39,7 +39,7 @@ Isso cria `function.zip` com tudo que você precisa.
 ### Configurações:
 
 ```
-Nome: lumo-ai-image-generation
+Nome: moovia-ai-video-generation
 Runtime: Node.js 18.x (ou mais recente)
 Architecture: x86_64
 Role: Create a new role with basic Lambda permissions
@@ -62,7 +62,7 @@ Role: Create a new role with basic Lambda permissions
 
 ```bash
 aws lambda update-function-code \
-  --function-name lumo-ai-image-generation \
+  --function-name moovia-ai-video-generation \
   --zip-file fileb://function.zip \
   --region sa-east-1
 ```
@@ -76,7 +76,7 @@ aws lambda update-function-code \
 3. Adicione as seguintes variáveis:
 
 ```
-MONGODB_URI = mongodb+srv://usuario:senha@cluster.mongodb.net/lumo
+MONGODB_URI = mongodb+srv://usuario:senha@cluster.mongodb.net/moovia
 GOOGLE_API_KEY = AIzaSy...  (sua NOVA chave - revogue a antiga!)
 GEMINI_MODEL = gemini-3-pro-image-preview
 RATE_LIMIT_FREE = 0
@@ -119,8 +119,8 @@ Ephemeral storage: 512 MB (padrão)
 ### Configurações:
 
 ```
-API name: lumo-ai-api
-Description: Lumo AI image generation API
+API name: moovia-ai-api
+Description: Moovia AI video generation API
 ```
 
 ### Integração:
@@ -128,7 +128,7 @@ Description: Lumo AI image generation API
 1. Clique em **"Add integration"**
 2. Integration type: **Lambda**
 3. AWS Region: **sa-east-1**
-4. Lambda function: **lumo-ai-image-generation**
+4. Lambda function: **moovia-ai-video-generation**
 5. Version: **2.0**
 6. Clique em **"Next"**
 
@@ -194,7 +194,7 @@ https://abc123xyz.execute-api.sa-east-1.amazonaws.com/prod/generate-image
 
 {
   id: 'lambda-secure',
-  displayName: 'Lumo AI (Secure)',
+  displayName: 'Moovia AI (Secure)',
   name: 'gemini-3-pro-image-preview',
   provider: 'lambda',
   apiUrl: 'https://SUA-URL-AQUI.execute-api.sa-east-1.amazonaws.com/prod/generate-image', // ← Coloque sua URL aqui
@@ -254,13 +254,13 @@ curl -X POST https://SUA-URL.execute-api.sa-east-1.amazonaws.com/prod/generate-i
 
 1. Acesse CloudWatch: https://console.aws.amazon.com/cloudwatch
 2. Vá em **Logs** → **Log groups**
-3. Procure por `/aws/lambda/lumo-ai-image-generation`
+3. Procure por `/aws/lambda/moovia-ai-video-generation`
 4. Clique para ver os logs
 
 ### Via AWS CLI:
 
 ```bash
-aws logs tail /aws/lambda/lumo-ai-image-generation --follow --region sa-east-1
+aws logs tail /aws/lambda/moovia-ai-video-generation --follow --region sa-east-1
 ```
 
 ---

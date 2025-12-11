@@ -15,6 +15,7 @@ import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../types';
 import { generateImage } from '../services/api';
 import { saveToHistory } from '../services/history';
+import COLORS from '../constants/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -258,7 +259,7 @@ export default function LoadingScreen({ navigation, route }: LoadingScreenProps)
 
   return (
     <LinearGradient
-      colors={['#1a0b2e', '#3D2B7A', '#5a3f9a']}
+      colors={COLORS.gradients.main}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -360,9 +361,9 @@ const styles = StyleSheet.create({
   sparkleShape: {
     width: 12,
     height: 12,
-    backgroundColor: '#FFD700',
+    backgroundColor: COLORS.brand.cyan,
     borderRadius: 6,
-    shadowColor: '#FFD700',
+    shadowColor: COLORS.brand.cyan,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 8,
@@ -391,13 +392,13 @@ const styles = StyleSheet.create({
   brandText: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#FFF',
+    color: COLORS.text.primary,
     marginBottom: 16,
     letterSpacing: 2,
   },
   loadingText: {
     fontSize: 18,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: COLORS.text.secondary,
     textAlign: 'center',
   },
 });

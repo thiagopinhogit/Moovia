@@ -1,7 +1,7 @@
 {
-  "name": "lumo-lambda-api",
+  "name": "moovia-lambda-api",
   "version": "1.0.0",
-  "description": "Lambda function for Lumo AI image generation with MongoDB tracking",
+  "description": "Lambda function for Moovia AI video generation with MongoDB tracking",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

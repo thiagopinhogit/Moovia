@@ -15,6 +15,7 @@ import { RouteProp } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../types';
+import COLORS from '../constants/colors';
 
 type CategoryDetailScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'CategoryDetail'>;
@@ -188,7 +189,7 @@ export default function CategoryDetailScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.background.primary,
   },
   backButton: {
     position: 'absolute',
@@ -197,14 +198,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: COLORS.surface.primary,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
   backIcon: {
     fontSize: 24,
-    color: '#000',
+    color: COLORS.text.primary,
   },
   content: {
     flex: 1,
@@ -215,19 +216,19 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
+    color: COLORS.text.secondary,
     marginBottom: 10,
   },
   effectName: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#000',
+    color: COLORS.text.primary,
     marginBottom: 10,
     textAlign: 'center',
   },
   description: {
     fontSize: 16,
-    color: '#666',
+    color: COLORS.text.secondary,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 30,
@@ -236,29 +237,29 @@ const styles = StyleSheet.create({
     width: width - 80,
     height: (width - 80) * 1.5,
     borderRadius: 20,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: COLORS.surface.primary,
   },
   tryButton: {
     marginHorizontal: 20,
     marginBottom: 30,
-    backgroundColor: '#000',
+    backgroundColor: COLORS.cta.primary,
     borderRadius: 30,
     paddingVertical: 18,
     alignItems: 'center',
   },
   tryButtonText: {
-    color: '#FFF',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
   },
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: COLORS.ui.overlay,
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface.primary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 12,
@@ -268,7 +269,7 @@ const styles = StyleSheet.create({
   modalHandle: {
     width: 40,
     height: 5,
-    backgroundColor: '#D0D0D0',
+    backgroundColor: COLORS.ui.border,
     borderRadius: 3,
     alignSelf: 'center',
     marginBottom: 20,
@@ -278,12 +279,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
-    color: '#000',
+    color: COLORS.text.primary,
   },
   modalOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.surface.secondary,
     padding: 18,
     borderRadius: 16,
     marginBottom: 12,
@@ -295,12 +296,12 @@ const styles = StyleSheet.create({
   modalOptionText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
+    color: COLORS.text.primary,
   },
   modalCancel: {
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface.primary,
     borderWidth: 2,
-    borderColor: '#E0E0E0',
+    borderColor: COLORS.ui.border,
     padding: 18,
     borderRadius: 16,
     marginTop: 8,
@@ -308,7 +309,7 @@ const styles = StyleSheet.create({
   modalCancelText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#666',
+    color: COLORS.text.secondary,
     textAlign: 'center',
   },
 });

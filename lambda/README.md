@@ -1,4 +1,4 @@
-# 🔒 Lumo AI - AWS Lambda Backend
+# 🔒 Moovia AI - AWS Lambda Backend
 
 Backend seguro para geração de imagens com Google Gemini API.
 
@@ -56,7 +56,7 @@ cp .env.example .env
 Edite `.env`:
 
 ```env
-MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/lumo
+MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/moovia
 GOOGLE_API_KEY=AIzaSy...  # SUA NOVA CHAVE (revogue a antiga!)
 GEMINI_MODEL=gemini-3-pro-image-preview
 RATE_LIMIT_PREMIUM=1000

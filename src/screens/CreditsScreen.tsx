@@ -28,6 +28,7 @@ import {
   CreditTransaction,
   CreditStats,
 } from '../services/credits';
+import COLORS from '../constants/colors';
 
 export default function CreditsScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -163,7 +164,7 @@ export default function CreditsScreen({ navigation }: any) {
           {stats?.subscriptionTier && (
             <View style={styles.subscriptionBadge}>
               <Text style={styles.subscriptionText}>
-                💎 {stats.subscriptionTier.replace('lumopro', '').toUpperCase()}
+                💎 {stats.subscriptionTier.replace('moovia', '').replace('pro', 'PRO ')}
               </Text>
             </View>
           )}
@@ -285,7 +286,7 @@ export default function CreditsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: COLORS.background.primary,
   },
   scrollView: {
     flex: 1,
@@ -298,7 +299,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#94A3B8',
+    color: COLORS.text.secondary,
   },
   header: {
     flexDirection: 'row',
@@ -311,12 +312,12 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 28,
-    color: '#FFFFFF',
+    color: COLORS.text.primary,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: COLORS.text.primary,
   },
   balanceCard: {
     backgroundColor: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)',
@@ -332,18 +333,18 @@ const styles = StyleSheet.create({
   },
   balanceLabel: {
     fontSize: 16,
-    color: '#E0E7FF',
+    color: COLORS.opacity.white80,
     marginBottom: 8,
   },
   balanceAmount: {
     fontSize: 56,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: COLORS.text.primary,
     marginBottom: 4,
   },
   balanceSubtext: {
     fontSize: 14,
-    color: '#E0E7FF',
+    color: COLORS.opacity.white80,
   },
   subscriptionBadge: {
     marginTop: 16,
@@ -355,7 +356,7 @@ const styles = StyleSheet.create({
   subscriptionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: COLORS.text.primary,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -365,7 +366,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#1E293B',
+    backgroundColor: COLORS.surface.primary,
     padding: 20,
     borderRadius: 16,
     alignItems: 'center',
@@ -373,12 +374,12 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: COLORS.text.primary,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: COLORS.text.secondary,
   },
   section: {
     marginHorizontal: 20,
@@ -387,33 +388,33 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: COLORS.text.primary,
     marginBottom: 16,
   },
   costCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
+    backgroundColor: COLORS.surface.primary,
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
   },
   costModel: {
     fontSize: 16,
-    color: '#FFFFFF',
+    color: COLORS.text.primary,
     fontWeight: '600',
   },
   costAmount: {
     fontSize: 16,
-    color: '#8B5CF6',
+    color: COLORS.cta.secondary,
     fontWeight: '600',
   },
   productCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
+    backgroundColor: COLORS.surface.primary,
     padding: 20,
     borderRadius: 16,
     marginBottom: 12,
@@ -424,12 +425,12 @@ const styles = StyleSheet.create({
   productTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: COLORS.text.primary,
     marginBottom: 4,
   },
   productDescription: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: COLORS.text.secondary,
   },
   productPriceContainer: {
     marginLeft: 16,
@@ -437,12 +438,12 @@ const styles = StyleSheet.create({
   productPrice: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#8B5CF6',
+    color: COLORS.cta.secondary,
   },
   transactionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
+    backgroundColor: COLORS.surface.primary,
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
@@ -451,7 +452,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#334155',
+    backgroundColor: COLORS.surface.secondary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -465,12 +466,12 @@ const styles = StyleSheet.create({
   transactionType: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: COLORS.text.primary,
     marginBottom: 2,
   },
   transactionDate: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: COLORS.text.secondary,
   },
   transactionAmount: {
     marginLeft: 12,
@@ -491,7 +492,7 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#64748B',
+    color: COLORS.text.tertiary,
   },
 });
 

@@ -14,8 +14,8 @@ YELLOW='\033[0;33m'
 NC='\033[0m'
 
 # Configurações
-API_NAME="lumo-ai-api"
-FUNCTION_NAME="lumo-ai-image-generation"
+API_NAME="moovia-ai-api"
+FUNCTION_NAME="moovia-ai-video-generation"
 REGION="sa-east-1"
 STAGE_NAME="prod"
 

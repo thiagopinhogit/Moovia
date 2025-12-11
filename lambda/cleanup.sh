@@ -4,9 +4,9 @@
 
 set -e
 
-FUNCTION_NAME="lumo-ai-image-generation"
-API_NAME="lumo-ai-api"
-ROLE_NAME="lumo-lambda-execution-role"
+FUNCTION_NAME="moovia-ai-video-generation"
+API_NAME="moovia-ai-api"
+ROLE_NAME="moovia-lambda-execution-role"
 REGION="sa-east-1"
 
 echo "🗑️  Deletando infraestrutura..."

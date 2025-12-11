@@ -15,7 +15,7 @@ One common reason is that you're trying to access the database from an IP that i
 
 1. **Acesse**: https://cloud.mongodb.com/
 2. **Login** com sua conta
-3. **Selecione** seu projeto "lumoai"  
+3. **Selecione** seu projeto "mooviaai"  
 4. **Clique** em "Network Access" no menu lateral esquerdo
 5. **Clique** no botão verde "+ ADD IP ADDRESS"
 6. **Selecione** "ALLOW ACCESS FROM ANYWHERE"
@@ -54,9 +54,9 @@ Depois de adicionar o IP, teste a Lambda:
 ```bash
 cd lambda
 aws lambda invoke \
-  --function-name lumo-ai-image-generation \
+  --function-name moovia-ai-video-generation \
   --region sa-east-1 \
-  --profile lumo \
+  --profile moovia \
   --payload file:///tmp/test-payload.json \
   --cli-binary-format raw-in-base64-out \
   /tmp/response.json

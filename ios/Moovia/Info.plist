@@ -54,8 +54,6 @@
     <string>Moovia needs access to your photos and videos for AI video creation and editing.</string>
     <key>RCTNewArchEnabled</key>
     <true/>
-    <key>SKIncludeConsumableInAppPurchaseHistory</key>
-    <true/>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

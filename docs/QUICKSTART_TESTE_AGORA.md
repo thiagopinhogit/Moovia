@@ -19,7 +19,7 @@ Siga esses passos NA ORDEM para testar em 15 minutos:
 ### 2. Criar usuário:
 ```
 Security Quickstart aparecerá:
-- Username: lumo_admin
+- Username: moovia_admin
 - Password: (auto-gerada) → COPIE A SENHA!
 - Add User
 ```
@@ -39,10 +39,10 @@ Security Quickstart aparecerá:
 - Substitua <password> pela senha que você copiou
 
 Exemplo:
-mongodb+srv://lumo_admin:SuaSenha123@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+mongodb+srv://moovia_admin:SuaSenha123@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
 
-Adicione /lumo antes do ?:
-mongodb+srv://lumo_admin:SuaSenha123@cluster0.xxxxx.mongodb.net/lumo?retryWrites=true&w=majority
+Adicione /moovia antes do ?:
+mongodb+srv://moovia_admin:SuaSenha123@cluster0.xxxxx.mongodb.net/moovia?retryWrites=true&w=majority
 ```
 
 **✅ MongoDB pronto! Guarde essa string!**
@@ -120,7 +120,7 @@ Isso cria `function.zip`
 1. Acesse: https://console.aws.amazon.com/lambda
 2. Mude região para: São Paulo (sa-east-1) [topo direito]
 3. Create function
-   - Nome: lumo-ai-image-generation
+   - Nome: moovia-ai-video-generation
    - Runtime: Node.js 18.x
    - Create function
 4. Upload code:
@@ -150,7 +150,7 @@ Isso cria `function.zip`
 3. Add integration:
    - Lambda
    - Region: sa-east-1
-   - Lambda function: lumo-ai-image-generation
+   - Lambda function: moovia-ai-video-generation
    - Next
 4. Configure routes:
    - Method: POST
@@ -192,7 +192,7 @@ https://abc123xyz.execute-api.sa-east-1.amazonaws.com/prod/generate-image
 ```typescript
 {
   id: 'lambda-secure',
-  displayName: 'Lumo AI (Secure)',
+  displayName: 'Moovia AI (Secure)',
   name: 'gemini-3-pro-image-preview',
   provider: 'lambda',
   apiUrl: 'COLE_SUA_URL_AQUI/generate-image', // ← Sua URL do API Gateway
@@ -265,7 +265,7 @@ npx expo start
 ```
 1. Acesse CloudWatch: https://console.aws.amazon.com/cloudwatch
 2. Logs → Log groups
-3. /aws/lambda/lumo-ai-image-generation
+3. /aws/lambda/moovia-ai-video-generation
 4. Clique no stream mais recente
 ```
 
@@ -276,7 +276,7 @@ npx expo start
 ### "Internal server error" no app:
 ```bash
 # Ver logs da Lambda
-aws logs tail /aws/lambda/lumo-ai-image-generation --follow --region sa-east-1
+aws logs tail /aws/lambda/moovia-ai-video-generation --follow --region sa-east-1
 ```
 
 ### "Network error":
@@ -288,7 +288,7 @@ aws logs tail /aws/lambda/lumo-ai-image-generation --follow --region sa-east-1
 
 ### "MongoDB connection failed":
 ```
-- Verifique se adicionou /lumo na connection string
+- Verifique se adicionou /moovia na connection string
 - Verifique se o IP 0.0.0.0/0 está liberado no MongoDB
 - Teste a connection string no Compass
 ```

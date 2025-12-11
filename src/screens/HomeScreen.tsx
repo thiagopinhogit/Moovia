@@ -26,8 +26,10 @@ import { getTranslatedCategories } from '../constants/categories';
 import { getCreditBalance, formatCredits } from '../services/credits';
 import { useSubscription } from '../context/SubscriptionContext';
 import { getHistory, HistoryItem } from '../services/history';
-import BeforeAfterCard from '../components/BeforeAfterCard';
+import VideoCard from '../components/VideoCard';
 import { getAllModels, getModelById, getDefaultModel } from '../constants/aiModels';
+import COLORS from '../constants/colors';
+import TYPO from '../constants/typography';
 import { STORAGE_KEYS } from '../constants/storage';
 import { saveSelectedModel } from '../services/api';
 import { CREDIT_COSTS } from '../constants/credits';
@@ -38,7 +40,8 @@ type HomeScreenProps = {
 };
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 60) / 2.5;
+// Ajuste para ficar próximo do mock: 3 cards grandes e pouco espaço entre eles
+const CARD_WIDTH = (width - 6) / 3;
 
 // Storage key for onboarding - using centralized storage keys
 const OLD_STORAGE_KEY = '@lumo_onboarding_completed'; // Keep for backwards compatibility
@@ -68,49 +71,90 @@ const buildBeforeAfterPreview = (imageUri: string) => {
   };
 };
 
-// Trending categories with local images
-const TRENDING_ITEMS = [
+const SAMPLE_VIDEO = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
+
+// Trending items as videos
+const SECTION_ITEMS = [
+  {
+    id: 'sec-made-it',
+    title: 'We Made It!',
+    items: [
   {
     id: 'trending-1',
-    name: 'AI Boyfriend',
-    beforeImage: require('../../assets/images/categories/ai-boyfriend/before.jpg'),
-    afterImage: require('../../assets/images/categories/ai-boyfriend/after.jpg'),
+        name: 'AI Video Remix',
+        description: 'Transforme qualquer clipe em um remix cinematográfico',
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/ai-boyfriend/after.jpg'),
   },
   {
     id: 'trending-2',
-    name: 'Tattoo Try-On',
-    beforeImage: require('../../assets/images/categories/tattoo-try-on/before.jpg'),
-    afterImage: require('../../assets/images/categories/tattoo-try-on/after.jpg'),
+        name: 'Diamond Duo',
+        description: 'Duo brilhante em estética cinematográfica',
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/tattoo-try-on/after.jpg'),
   },
   {
     id: 'trending-3',
-    name: 'Fat Pet',
-    beforeImage: require('../../assets/images/categories/fat-pet/before.jpg'),
-    afterImage: require('../../assets/images/categories/fat-pet/after.jpg'),
+        name: 'Diamond Drip',
+        description: 'Estilo urbano premium em vídeo',
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/fat-pet/after.jpg'),
+      },
+    ],
   },
   {
-    id: 'trending-4',
-    name: 'Hairstyle Change',
-    beforeImage: require('../../assets/images/categories/hairstyle-change/before.jpg'),
-    afterImage: require('../../assets/images/categories/hairstyle-change/after.jpg'),
+    id: 'sec-popular',
+    title: 'Popular',
+    items: [
+      {
+        id: 'popular-1',
+        name: 'Arrest Prank',
+        description: 'Cena viral em segundos',
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/plumber/after.jpg'),
   },
   {
-    id: 'trending-5',
-    name: 'Plumber',
-    beforeImage: require('../../assets/images/categories/plumber/before.jpg'),
-    afterImage: require('../../assets/images/categories/plumber/after.jpg'),
+        id: 'popular-2',
+        name: 'Gas Station',
+        description: 'Ação noturna cinematográfica',
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/homeless/after.jpg'),
+      },
+      {
+        id: 'popular-3',
+        name: 'Twilight',
+        description: 'Mood gelado, vibe dramática',
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/crashed-car/after.jpg'),
+      },
+    ],
   },
   {
-    id: 'trending-6',
-    name: 'Homeless',
-    beforeImage: require('../../assets/images/categories/homeless/before.jpg'),
-    afterImage: require('../../assets/images/categories/homeless/after.jpg'),
+    id: 'sec-xmas',
+    title: 'Christmas is Coming',
+    items: [
+      {
+        id: 'xmas-1',
+        name: 'Christmas Portraits',
+        description: 'Retratos natalinos com bokeh',
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/ai-boyfriend/after.jpg'),
   },
   {
-    id: 'trending-7',
-    name: 'Crashed Car',
-    beforeImage: require('../../assets/images/categories/crashed-car/before.jpg'),
-    afterImage: require('../../assets/images/categories/crashed-car/after.jpg'),
+        id: 'xmas-2',
+        name: 'Santa Season',
+        description: 'Clima de família e magia',
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/hairstyle-change/after.jpg'),
+      },
+      {
+        id: 'xmas-3',
+        name: 'Polaroid Christmas',
+        description: 'Look retrô e cozy',
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/plumber/after.jpg'),
+      },
+    ],
   },
 ];
 
@@ -159,6 +203,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const handleMainButton = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setShowImagePickerModal(true);
+  };
+
+  const handleTrendsPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.navigate('Home');
   };
 
   const requestPermissions = async () => {
@@ -385,12 +434,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#5B3F9E', '#3D2B7A', '#2A1A5E']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.headerGradientWrapper}
-      >
+      <View style={styles.headerGradientWrapper}>
         <SafeAreaView edges={['top']}>
           <StatusBar barStyle="light-content" />
           
@@ -399,155 +443,76 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             <View style={styles.headerContent}>
               <View style={styles.titleContainer}>
                 <Image
-                  source={require('../../assets/images/splash-animation.gif')}
+                  source={require('../../assets/logo.png')}
                   style={styles.wandIcon}
                   resizeMode="contain"
                 />
                 <Text style={styles.title}>{t('home.title')}</Text>
               </View>
-              <View style={styles.headerButtons}>
-                <TouchableOpacity style={styles.historyButton} onPress={handleSettingsPress}>
-                  <Ionicons name="settings-outline" size={26} color="#FFF" />
-                </TouchableOpacity>
-              </View>
             </View>
           </View>
         </SafeAreaView>
-      </LinearGradient>
+      </View>
 
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {recentHistory.length > 0 && (
-          <View style={styles.recentSection}>
-            <View style={styles.recentHeader}>
-              <View style={styles.recentTitleWrapper}>
-                <Text style={styles.categoryTitle}>{t('home.recentEdits')}</Text>
-              </View>
-              <TouchableOpacity style={styles.viewAllButton} onPress={handleHistoryPress}>
-                <Text style={styles.viewAllText}>{t('home.viewAll')}</Text>
-                <Ionicons name="arrow-forward" size={16} color="#5B3F9E" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.recentCardsContainer}
-            >
-              {recentHistory.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.recentCard}
-                  onPress={() => handleRecentItemPress(item)}
-                >
-                  <Image
-                    source={{ uri: item.imageUri }}
-                    style={styles.recentCardImage}
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* Trending Section */}
-        <View style={styles.categorySection}>
+        {/* Video Sections */}
+        {SECTION_ITEMS.map((section) => (
+          <View key={section.id} style={styles.categorySection}>
           <View style={styles.categoryHeader}>
-            <Text style={styles.categoryTitle}>{t('home.trending')}</Text>
+              <Text style={styles.categoryTitle}>{section.title}</Text>
           </View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.cardsContainer}
           >
-            {TRENDING_ITEMS.map((item) => (
-              <BeforeAfterCard
+              {section.items.map((item) => (
+                <VideoCard
                 key={item.id}
-                beforeUri={item.beforeImage}
-                afterUri={item.afterImage}
-                label={item.name}
+                  videoUri={item.video}
+                  poster={item.poster}
+                  title={item.name}
+                  description={item.description}
                 width={CARD_WIDTH}
-                height={CARD_WIDTH * 1.78}
+                  height={CARD_WIDTH * 1.35}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setShowImagePickerModal(true);
                 }}
-                style={styles.card}
-                badgeText={{ before: t('home.before'), after: t('home.after') }}
               />
             ))}
-          </ScrollView>
-        </View>
-
-        {CATEGORIES.map((category) => (
-          <View key={category.id} style={styles.categorySection}>
-            <View style={styles.categoryHeader}>
-              <Text style={styles.categoryTitle}>{category.name}</Text>
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.cardsContainer}
-            >
-              {category.effects.map((effect) => {
-                const { beforeUri, afterUri } = buildBeforeAfterPreview(effect.image);
-                return (
-                  <BeforeAfterCard
-                  key={effect.id}
-                    beforeUri={beforeUri}
-                    afterUri={afterUri}
-                    label={effect.name}
-                    width={CARD_WIDTH}
-                    height={CARD_WIDTH * 1.5}
-                  onPress={() => handleEffectPress(effect)}
-                    style={styles.card}
-                    badgeText={{ before: t('home.before'), after: t('home.after') }}
-                  />
-                );
-              })}
             </ScrollView>
           </View>
         ))}
-
-      {/* Restore Purchases Button */}
-      <View style={styles.restorePurchasesContainer}>
-        <TouchableOpacity 
-          style={styles.restorePurchasesButton}
-          onPress={handleRestorePurchases}
-          disabled={isRestoringPurchases}
-        >
-          {isRestoringPurchases ? (
-            <ActivityIndicator size="small" color="#5B3F9E" />
-          ) : (
-            <>
-              <Ionicons name="refresh-outline" size={18} color="#5B3F9E" />
-              <Text style={styles.restorePurchasesText}>{t('subscription.restorePurchases')}</Text>
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
       </ScrollView>
 
       {/* Bottom Blur Gradient Overlay */}
       <LinearGradient
-        colors={['rgba(245, 245, 245, 0)', 'rgba(245, 245, 245, 0.4)', 'rgba(245, 245, 245, 0.85)', 'rgba(245, 245, 245, 1)']}
+        colors={COLORS.gradients.overlay}
         locations={[0, 0.3, 0.7, 1]}
         style={styles.bottomGradient}
         pointerEvents="none"
       />
 
-      {/* Floating Main Button */}
-      <View style={styles.floatingButtonContainer}>
-        <TouchableOpacity style={styles.floatingButton} onPress={handleMainButton}>
-          <Image
-            source={require('../../assets/images/logo.png')}
-            style={styles.floatingButtonImage}
-            resizeMode="cover"
-          />
+      {/* Floating Action Bar */}
+      <View style={styles.actionBarContainer}>
+        <View style={styles.actionBar}>
+          <TouchableOpacity style={styles.actionButtonSecondary} onPress={handleTrendsPress}>
+            <Ionicons name="trending-up-outline" size={26} color={COLORS.text.secondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButtonPrimary} onPress={handleMainButton}>
+            <Ionicons name="add" size={32} color={COLORS.text.primary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButtonSecondary} onPress={handleSettingsPress}>
+            <Ionicons name="settings-outline" size={26} color={COLORS.text.secondary} />
         </TouchableOpacity>
+        </View>
       </View>
 
       {/* Settings Modal */}
@@ -593,10 +558,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 disabled={isRestoringPurchases}
               >
                 {isRestoringPurchases ? (
-                  <ActivityIndicator size="small" color="#5B3F9E" />
+                  <ActivityIndicator size="small" color={COLORS.primary.violet} />
                 ) : (
                   <>
-                    <Ionicons name="refresh-outline" size={20} color="#5B3F9E" />
+                    <Ionicons name="refresh-outline" size={20} color={COLORS.primary.violet} />
                     <Text style={styles.settingsRowText}>{t('subscription.restorePurchases')}</Text>
                   </>
                 )}
@@ -608,7 +573,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               <Text style={styles.settingsLabel}>Credits</Text>
               {loadingCredits ? (
                 <View style={styles.creditsBox}>
-                  <ActivityIndicator size="small" color="#5B3F9E" />
+                  <ActivityIndicator size="small" color={COLORS.primary.violet} />
                 </View>
               ) : (
                 <View style={styles.creditsBox}>
@@ -643,7 +608,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                   setShowModelSelectorModal(true);
                 }}
               >
-                <Ionicons name="hardware-chip-outline" size={20} color="#5B3F9E" />
+                <Ionicons name="hardware-chip-outline" size={20} color={COLORS.ui.white} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.settingsRowText}>{selectedModel.displayName}</Text>
                   {(() => {
@@ -674,7 +639,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                   }, 300);
                 }}
               >
-                <Ionicons name="language-outline" size={20} color="#5B3F9E" />
+                <Ionicons name="language-outline" size={20} color={COLORS.ui.white} />
                 <Text style={styles.settingsRowText}>
                   {LANGUAGES.find(l => l.code === i18n.language)?.name || i18n.language.toUpperCase()}
                 </Text>
@@ -808,7 +773,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 style={styles.languageResetButton}
                 onPress={resetAndShowOnboarding}
               >
-                <Ionicons name="refresh-outline" size={16} color="#5B3F9E" />
+                <Ionicons name="refresh-outline" size={16} color={COLORS.ui.white} />
                 <Text style={styles.languageResetButtonText}>Reset Onboarding</Text>
               </TouchableOpacity>
             )}
@@ -870,7 +835,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                         )}
                       </View>
                       {selectedModelId === model.id && (
-                        <Ionicons name="checkmark-circle" size={24} color="#5B3F9E" />
+                        <Ionicons name="checkmark-circle" size={24} color={COLORS.primary.cyan} />
                       )}
                     </TouchableOpacity>
                   );
@@ -894,10 +859,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.background.primary,
   },
   headerGradientWrapper: {
     width: '100%',
+    backgroundColor: COLORS.surface.primary, // Night Graphite
   },
   header: {
     paddingHorizontal: 20,
@@ -915,19 +881,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   wandIcon: {
-    width: 48,
-    height: 48,
+    width: 60,
+    height: 60,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontFamily: TYPO.bold,
     color: '#FFFFFF',
     letterSpacing: -0.5,
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
   // Pro Badge and Upgrade Button
   proLoadingContainer: {
@@ -993,13 +954,13 @@ const styles = StyleSheet.create({
   // Language Selector Modal
   languageModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: COLORS.ui.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   languageModalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface.primary,
     borderRadius: 24,
     width: '100%',
     maxWidth: 400,
@@ -1010,17 +971,17 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: COLORS.ui.border,
   },
   languageModalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
+    color: COLORS.text.primary,
     marginBottom: 4,
   },
   languageModalSubtitle: {
     fontSize: 14,
-    color: '#666',
+    color: COLORS.text.secondary,
   },
   languageList: {
     maxHeight: 400,
@@ -1031,10 +992,10 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
+    borderBottomColor: COLORS.ui.border,
   },
   languageItemSelected: {
-    backgroundColor: '#F8F4FF',
+    backgroundColor: COLORS.opacity.violet20,
   },
   languageFlag: {
     fontSize: 28,
@@ -1043,14 +1004,14 @@ const styles = StyleSheet.create({
   languageName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
+    color: COLORS.text.primary,
     flex: 1,
   },
   languageCheckmark: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#5B3F9E',
+    backgroundColor: COLORS.cta.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1064,10 +1025,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 0,
     padding: 14,
-    backgroundColor: 'rgba(91, 63, 158, 0.1)',
+    backgroundColor: COLORS.opacity.violet20,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(91, 63, 158, 0.2)',
+    borderColor: COLORS.opacity.violet30,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1076,19 +1037,19 @@ const styles = StyleSheet.create({
   languageResetButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5B3F9E',
+    color: COLORS.cta.secondary,
   },
   languageCloseButton: {
     margin: 16,
     padding: 16,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.surface.secondary,
     borderRadius: 16,
     alignItems: 'center',
   },
   languageCloseButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#666',
+    color: COLORS.text.secondary,
   },
   historyButton: {
     width: 44,
@@ -1098,11 +1059,11 @@ const styles = StyleSheet.create({
   },
   settingsOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: COLORS.ui.overlay,
     justifyContent: 'flex-end',
   },
   settingsContent: {
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface.primary,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 24,
@@ -1112,7 +1073,7 @@ const styles = StyleSheet.create({
   settingsHandle: {
     width: 40,
     height: 5,
-    backgroundColor: '#D0D0D0',
+    backgroundColor: COLORS.ui.border,
     borderRadius: 3,
     alignSelf: 'center',
     marginBottom: 16,
@@ -1120,7 +1081,7 @@ const styles = StyleSheet.create({
   settingsTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#000',
+    color: COLORS.text.primary,
     textAlign: 'center',
     marginBottom: 16,
   },
@@ -1131,7 +1092,7 @@ const styles = StyleSheet.create({
   settingsLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: COLORS.text.secondary,
   },
   planRow: {
     flexDirection: 'row',
@@ -1145,36 +1106,36 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   planBadgePro: {
-    backgroundColor: 'rgba(255, 215, 0, 0.12)',
-    borderColor: 'rgba(255, 215, 0, 0.4)',
+    backgroundColor: COLORS.opacity.white20,
+    borderColor: COLORS.special.gold,
   },
   planBadgeFree: {
-    backgroundColor: 'rgba(91, 63, 158, 0.1)',
-    borderColor: 'rgba(91, 63, 158, 0.25)',
+    backgroundColor: COLORS.opacity.violet20,
+    borderColor: COLORS.cta.secondary,
   },
   planBadgeTextPro: {
-    color: '#C9A100',
+    color: COLORS.special.gold,
     fontWeight: '700',
     fontSize: 12,
   },
   planBadgeTextFree: {
-    color: '#5B3F9E',
+    color: COLORS.cta.secondary,
     fontWeight: '700',
     fontSize: 12,
   },
   settingsActionButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: 'rgba(91, 63, 158, 0.1)',
+    backgroundColor: COLORS.opacity.violet20,
     borderRadius: 10,
   },
   settingsActionText: {
-    color: '#5B3F9E',
+    color: COLORS.cta.secondary,
     fontWeight: '700',
     fontSize: 12,
   },
   creditsBox: {
-    backgroundColor: '#F8F8F8',
+    backgroundColor: COLORS.surface.secondary,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -1184,16 +1145,16 @@ const styles = StyleSheet.create({
   creditsAmount: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#000',
+    color: COLORS.text.primary,
   },
   buyMoreButton: {
-    backgroundColor: '#5B3F9E',
+    backgroundColor: COLORS.cta.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
   buyMoreText: {
-    color: '#FFF',
+    color: COLORS.text.primary,
     fontWeight: '600',
     fontSize: 14,
   },
@@ -1206,28 +1167,28 @@ const styles = StyleSheet.create({
   settingsRowText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: COLORS.text.primary,
   },
   settingsRowSubtext: {
     fontSize: 12,
-    color: '#666',
+    color: COLORS.text.secondary,
     marginTop: 2,
   },
   settingsCloseButton: {
     marginTop: 4,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.surface.secondary,
     alignItems: 'center',
   },
   settingsCloseButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#3D2B7A',
+    color: COLORS.text.secondary,
   },
   // Model Selector Modal
   modelSelectorContent: {
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface.primary,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 24,
@@ -1280,13 +1241,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.surface.primary,
     alignItems: 'center',
   },
   modelSelectorCloseButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#3D2B7A',
+    color: COLORS.text.primary,
   },
   scrollView: {
     flex: 1,
@@ -1303,31 +1264,55 @@ const styles = StyleSheet.create({
     height: '20%',
     zIndex: 1,
   },
-  floatingButtonContainer: {
+  actionBarContainer: {
     position: 'absolute',
     bottom: 60,
-    right: 40,
-    zIndex: 2,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 3,
   },
-  floatingButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#3D2B7A',
+  actionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.surface.secondary,
+    borderRadius: 36,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    gap: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 12,
+    borderWidth: 1,
+    borderColor: COLORS.ui.border,
+  },
+  actionButtonPrimary: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: COLORS.text.black,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
-    overflow: 'hidden',
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+    borderWidth: 2,
+    borderColor: COLORS.ui.border,
   },
-  floatingButtonImage: {
-    width: 80,
-    height: 80,
+  actionButtonSecondary: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS.surface.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.ui.border,
   },
   categorySection: {
     marginBottom: 32,
@@ -1357,7 +1342,7 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5B3F9E',
+    color: COLORS.brand.cyan,
   },
   recentCardsContainer: {
     paddingHorizontal: 20,
@@ -1389,17 +1374,18 @@ const styles = StyleSheet.create({
     fontSize: 28,
   },
   categoryTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+    fontSize: 18,
+    fontFamily: TYPO.semibold,
+    color: COLORS.text.secondary, // cinza para títulos de categoria (como no mock)
   },
   cardsContainer: {
-    paddingHorizontal: 20,
-    gap: 15,
+    paddingHorizontal: 2,
+    gap: 2,
+    marginLeft: 15,
   },
   card: {
     width: CARD_WIDTH,
-    marginRight: 15,
+    marginRight: 2,
   },
   cardImage: {
     width: CARD_WIDTH,
@@ -1415,18 +1401,18 @@ const styles = StyleSheet.create({
   cardLabel: {
     marginTop: 10,
     fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
+    fontFamily: TYPO.semibold,
+    color: COLORS.text.primary,
     textAlign: 'center',
   },
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: COLORS.ui.overlay,
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface.primary,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingTop: 12,
@@ -1436,23 +1422,24 @@ const styles = StyleSheet.create({
   modalHandle: {
     width: 40,
     height: 5,
-    backgroundColor: '#D0D0D0',
+    backgroundColor: COLORS.ui.border,
     borderRadius: 3,
     alignSelf: 'center',
     marginBottom: 24,
   },
   modalTitle: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontFamily: TYPO.bold,
     textAlign: 'center',
     marginBottom: 8,
-    color: '#000',
+    color: COLORS.text.primary,
   },
   modalSubtitle: {
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 32,
-    color: '#666',
+    color: COLORS.text.secondary,
+    fontFamily: TYPO.medium,
   },
   modalOptionWrapper: {
     marginBottom: 16,
@@ -1478,13 +1465,14 @@ const styles = StyleSheet.create({
   },
   modalOptionText: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#FFF',
+    fontFamily: TYPO.medium,
+    color: COLORS.text.primary,
     marginBottom: 2,
   },
   modalOptionDescription: {
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: COLORS.text.secondary,
+    fontFamily: TYPO.regular,
   },
   // Restore Purchases
   restorePurchasesContainer: {
@@ -1499,15 +1487,15 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: 'rgba(91, 63, 158, 0.1)',
+    backgroundColor: COLORS.opacity.violet20,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(91, 63, 158, 0.2)',
+    borderColor: COLORS.opacity.violet30,
   },
   restorePurchasesText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5B3F9E',
+    color: COLORS.cta.secondary,
   },
 });
 

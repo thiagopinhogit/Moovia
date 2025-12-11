@@ -15,6 +15,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../types';
 import { getHistory, deleteHistoryItem, clearHistory, HistoryItem } from '../services/history';
+import COLORS from '../constants/colors';
 
 type HistoryScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'History'>;
@@ -167,7 +168,7 @@ export default function HistoryScreen({ navigation }: HistoryScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.background.primary,
   },
   header: {
     flexDirection: 'row',
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface.primary,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -194,14 +195,14 @@ const styles = StyleSheet.create({
     height: 12,
     borderLeftWidth: 3,
     borderBottomWidth: 3,
-    borderColor: '#000',
+    borderColor: COLORS.text.primary,
     transform: [{ rotate: '45deg' }],
     marginLeft: 4,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
+    color: COLORS.text.primary,
   },
   clearButton: {
     paddingHorizontal: 16,
@@ -210,7 +211,7 @@ const styles = StyleSheet.create({
   clearButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FF3B30',
+    color: COLORS.status.error,
   },
   spacer: {
     width: 44,
@@ -224,12 +225,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
+    color: COLORS.text.primary,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 16,
-    color: '#666',
+    color: COLORS.text.secondary,
     textAlign: 'center',
   },
   listContent: {
@@ -244,7 +245,7 @@ const styles = StyleSheet.create({
     width: ITEM_WIDTH,
     height: ITEM_WIDTH * 1.3,
     borderRadius: 16,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: COLORS.surface.primary,
   },
   itemInfo: {
     marginTop: 8,
@@ -252,12 +253,12 @@ const styles = StyleSheet.create({
   itemDescription: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#000',
+    color: COLORS.text.primary,
     marginBottom: 4,
   },
   itemDate: {
     fontSize: 12,
-    color: '#666',
+    color: COLORS.text.secondary,
   },
 });
 

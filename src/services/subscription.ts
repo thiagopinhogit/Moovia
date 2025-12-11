@@ -20,7 +20,7 @@ const SUPERWALL_API_KEY = 'pk_0ymj65UawvQji4nRBUXqh';
 // The identifier is usually something like 'pro', 'premium', etc.
 // Your RevenueCat Entitlement ID: entl914f737c5d
 // Make sure the identifier below matches what you set in RevenueCat dashboard
-export const LUMO_PRO_ENTITLEMENT = 'pro';
+export const MOOVIA_PRO_ENTITLEMENT = 'pro';
 
 class SubscriptionService {
   private initialized = false;
@@ -121,11 +121,11 @@ class SubscriptionService {
       }
 
       const customerInfo = await Purchases.getCustomerInfo();
-      const hasActiveSubscription = typeof customerInfo.entitlements.active[LUMO_PRO_ENTITLEMENT] !== 'undefined';
+      const hasActiveSubscription = typeof customerInfo.entitlements.active[MOOVIA_PRO_ENTITLEMENT] !== 'undefined';
       
       // Set subscription status in Superwall
       const status: SubscriptionStatus = hasActiveSubscription 
-        ? SubscriptionStatus.Active([LUMO_PRO_ENTITLEMENT])
+        ? SubscriptionStatus.Active([MOOVIA_PRO_ENTITLEMENT])
         : SubscriptionStatus.Inactive();
         
       await this.superwallInstance.setSubscriptionStatus(status);
@@ -167,7 +167,7 @@ class SubscriptionService {
         console.log('📡 Fetching fresh customer info from server...');
         const customerInfo = await Purchases.getCustomerInfo();
         
-        const hasActiveSubscription = typeof customerInfo.entitlements.active[LUMO_PRO_ENTITLEMENT] !== 'undefined';
+        const hasActiveSubscription = typeof customerInfo.entitlements.active[MOOVIA_PRO_ENTITLEMENT] !== 'undefined';
         
         console.log(`📊 Customer Info Retrieved:`, {
           hasActiveSubscription,
@@ -180,7 +180,7 @@ class SubscriptionService {
         // Update Superwall with new status
         if (this.superwallInstance) {
           const status: SubscriptionStatus = hasActiveSubscription 
-            ? SubscriptionStatus.Active([LUMO_PRO_ENTITLEMENT])
+            ? SubscriptionStatus.Active([MOOVIA_PRO_ENTITLEMENT])
             : SubscriptionStatus.Inactive();
             
           await this.superwallInstance.setSubscriptionStatus(status);
@@ -222,7 +222,7 @@ class SubscriptionService {
   async isPro(): Promise<boolean> {
     try {
       const customerInfo = await Purchases.getCustomerInfo();
-      const hasProAccess = typeof customerInfo.entitlements.active[LUMO_PRO_ENTITLEMENT] !== 'undefined';
+      const hasProAccess = typeof customerInfo.entitlements.active[MOOVIA_PRO_ENTITLEMENT] !== 'undefined';
       return hasProAccess;
     } catch (error) {
       console.error('Error checking Pro status:', error);
@@ -445,9 +445,9 @@ class SubscriptionService {
       if (this.superwallInstance) {
         console.log('👤 USER SUBSCRIPTION STATUS:');
         const customerInfo = await Purchases.getCustomerInfo();
-        const hasProAccess = typeof customerInfo.entitlements.active[LUMO_PRO_ENTITLEMENT] !== 'undefined';
+        const hasProAccess = typeof customerInfo.entitlements.active[MOOVIA_PRO_ENTITLEMENT] !== 'undefined';
         console.log('  • Has Pro Access:', hasProAccess ? '✅ YES' : '❌ NO');
-        console.log('  • Entitlement ID:', LUMO_PRO_ENTITLEMENT);
+        console.log('  • Entitlement ID:', MOOVIA_PRO_ENTITLEMENT);
         console.log('  • Active Entitlements:', Object.keys(customerInfo.entitlements.active).length > 0 
           ? Object.keys(customerInfo.entitlements.active).join(', ')
           : 'None');

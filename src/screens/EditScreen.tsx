@@ -36,6 +36,7 @@ import subscriptionService from '../services/subscription';
 import { getCreditBalance } from '../services/credits';
 import { getModelById, getDefaultModel } from '../constants/aiModels';
 import { CREDIT_COSTS } from '../constants/credits';
+import COLORS from '../constants/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -205,7 +206,7 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
       }
 
       // Convert data URI to file
-      const filename = `lumo_${Date.now()}.jpg`;
+      const filename = `moovia_${Date.now()}.jpg`;
       const fileUri = FileSystem.documentDirectory + filename;
 
       // Extract base64 from data URI
@@ -282,7 +283,7 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
       }
 
       // Get the cost for the selected model (default to Flash if not found)
-      const modelId = await AsyncStorage.getItem('@lumo_selected_ai_model');
+      const modelId = await AsyncStorage.getItem('@moovia_selected_ai_model');
       const model = modelId ? getModelById(modelId) : null;
       const creditCost = model?.id === 'gemini-pro' ? CREDIT_COSTS['gemini-pro'] : CREDIT_COSTS['gemini-flash'];
       
@@ -1008,7 +1009,7 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.background.primary,
   },
   keyboardView: {
     flex: 1,
@@ -1242,7 +1243,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface.primary,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingTop: 12,
@@ -1252,7 +1253,7 @@ const styles = StyleSheet.create({
   modalHandle: {
     width: 40,
     height: 5,
-    backgroundColor: '#D0D0D0',
+    backgroundColor: COLORS.ui.border,
     borderRadius: 3,
     alignSelf: 'center',
     marginBottom: 24,

@@ -277,7 +277,7 @@ app.listen(PORT, () => {
   const localIP = getLocalIP();
   console.log(`
   ╔════════════════════════════════════════╗
-  ║   🚀 Lumo Lambda Local Server         ║
+  ║   🚀 Moovia Lambda Local Server       ║
   ╠════════════════════════════════════════╣
   ║   Port: ${PORT}                          ║
   ║   Local IP: ${localIP}             ║
