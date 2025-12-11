@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Moovia",
+    "slug": "moovia-ai-video",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#5B3F9E"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.moovia.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Moovia needs access to your photo library to select videos and photos for AI video creation.",
+        "NSCameraUsageDescription": "Moovia needs access to your camera to record videos and take photos for AI video generation."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#5B3F9E"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.moovia.app",
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "CAMERA"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Moovia needs access to your photos and videos for AI video creation and editing."
+        }
+      ]
+    ]
+  }
+}

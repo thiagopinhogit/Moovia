@@ -1,0 +1,28 @@
+{
+  "name": "lumo-lambda-api",
+  "version": "1.0.0",
+  "description": "Lambda function for Lumo AI image generation with MongoDB tracking",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "deploy": "npm run build && zip -r function.zip dist node_modules package.json",
+    "dev": "nodemon",
+    "dev:direct": "ts-node src/server.ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@types/aws-lambda": "^8.10.130",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "mongoose": "^8.0.3",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.25",
+    "@types/node": "^20.10.6",
+    "@types/node-fetch": "^2.6.9",
+    "nodemon": "^3.1.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
