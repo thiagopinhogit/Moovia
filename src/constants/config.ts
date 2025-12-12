@@ -11,7 +11,7 @@
  * Production: AWS Lambda + API Gateway
  * Development: Local backend (if running)
  */
-const USE_PRODUCTION = true; // Set to false for local development
+const USE_PRODUCTION = false; // Set to false for local development
 
 // Production (AWS Lambda)
 const PRODUCTION_BACKEND_URL = 'https://krgq9pgvb0.execute-api.sa-east-1.amazonaws.com/prod';

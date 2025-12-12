@@ -19,6 +19,7 @@ import {
 } from './services/creditManager';
 import { handleRevenueCatWebhook } from './handlers/revenuecatWebhook';
 import { getBalance, getHistory, getStats } from './handlers/creditHandlers';
+import { handleGenerateVideo, handleVideoStatus } from './handlers/videoHandler';
 
 /**
  * Lambda Handler - supports both v1.0 and v2.0 API Gateway formats
@@ -69,6 +70,20 @@ export async function handler(event: any): Promise<APIGatewayProxyResult> {
   if (path === '/generate-image' || path.endsWith('/generate-image')) {
     console.log('🎨 Routing to image generation handler');
     return handleGenerateImage(event, headers);
+  }
+  
+  // Route to video generation handler
+  if (path === '/generate-video' || path.endsWith('/generate-video')) {
+    console.log('🎬 Routing to video generation handler');
+    await connectToDatabase();
+    return handleGenerateVideo(event, headers);
+  }
+  
+  // Route to video status check (GET /video-status/:taskId)
+  if (httpMethod === 'GET' && (path.includes('/video-status/') || path.match(/\/video-status\/[^/]+$/))) {
+    console.log('📊 Routing to video status handler');
+    await connectToDatabase();
+    return handleVideoStatus(event, headers);
   }
   
   // Unknown route

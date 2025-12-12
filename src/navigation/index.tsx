@@ -11,6 +11,7 @@ import EditScreen from '../screens/EditScreen';
 import LoadingScreen from '../screens/LoadingScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import PurchaseSuccessScreen from '../screens/PurchaseSuccessScreen';
+import VideoPlayerScreen from '../screens/VideoPlayerScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const ONBOARDING_KEY = '@moovia_onboarding_completed';
@@ -93,6 +94,15 @@ export default function Navigation() {
             presentation: 'transparentModal',
             animation: 'fade',
             gestureEnabled: false,
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen 
+          name="VideoPlayer" 
+          component={VideoPlayerScreen}
+          options={{
+            presentation: 'fullScreenModal',
+            animation: 'fade',
             headerShown: false,
           }}
         />

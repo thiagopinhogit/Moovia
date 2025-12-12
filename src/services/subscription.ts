@@ -10,7 +10,7 @@ import * as Application from 'expo-application';
 
 // Configuration constants - Replace with your actual keys
 const REVENUECAT_API_KEYS = {
-  ios: 'appl_GuomKGAVgJfTDjKbDfwVPwmwVOW',
+  ios: 'appl_QwTvRjqxxLtaAYzqPVWYofCVzPI',
   android: 'YOUR_REVENUECAT_ANDROID_API_KEY',
 };
 

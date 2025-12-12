@@ -62,7 +62,7 @@ const UserCreditsSchema = new Schema<IUserCredits>({
 });
 
 // Indexes for performance
-UserCreditsSchema.index({ userId: 1 });
+// Note: userId already has unique index (no need to add again)
 UserCreditsSchema.index({ lastUpdated: -1 });
 
 export const UserCredits = mongoose.model<IUserCredits>('UserCredits', UserCreditsSchema);

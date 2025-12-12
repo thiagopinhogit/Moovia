@@ -10,6 +10,7 @@ export type TransactionType =
   | 'subscription_grant' // Credits from subscription renewal
   | 'one_time_purchase' // Credits from one-time purchase
   | 'image_generation' // Credits spent on image generation
+  | 'video_generation' // Credits spent on video generation
   | 'admin_adjustment' // Manual adjustment by admin
   | 'refund'; // Credits refunded
 
@@ -32,10 +33,15 @@ export interface ICreditTransaction extends Document {
     productId?: string; // credits_1000, credits_5000, credits_10000
     purchaseToken?: string;
     
-    // For image_generation
-    modelUsed?: string; // gemini-pro, gemini-flash
-    requestId?: string; // Link to ApiRequest
+    // For image_generation and video_generation
+    modelUsed?: string; // gemini-pro, gemini-flash, kling-2.5-turbo, etc.
+    requestId?: string; // Link to ApiRequest or VideoTask
     imageGenerationSuccess?: boolean;
+    videoGenerationSuccess?: boolean;
+    isImageToVideo?: boolean; // For video generation: whether it's image-to-video
+    duration?: number; // For video generation: duration in seconds
+    aspectRatio?: string; // For video generation: aspect ratio (e.g., '16:9', '9:16')
+    prompt?: string; // Store a snippet of the prompt for reference
     
     // For admin_adjustment or refund
     reason?: string;
@@ -61,7 +67,7 @@ const CreditTransactionSchema = new Schema<ICreditTransaction>({
   type: {
     type: String,
     required: true,
-    enum: ['subscription_grant', 'one_time_purchase', 'image_generation', 'admin_adjustment', 'refund'],
+    enum: ['subscription_grant', 'one_time_purchase', 'image_generation', 'video_generation', 'admin_adjustment', 'refund'],
   },
   amount: {
     type: Number,
@@ -93,7 +99,7 @@ const CreditTransactionSchema = new Schema<ICreditTransaction>({
 
 // Indexes for performance and queries
 CreditTransactionSchema.index({ userId: 1, timestamp: -1 });
-CreditTransactionSchema.index({ transactionId: 1 });
+// Note: transactionId already has unique index (no need to add again)
 CreditTransactionSchema.index({ type: 1 });
 CreditTransactionSchema.index({ timestamp: -1 });
 

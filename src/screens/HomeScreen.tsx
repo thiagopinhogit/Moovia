@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,8 +26,10 @@ import { RootStackParamList } from '../types';
 import { getTranslatedCategories } from '../constants/categories';
 import { getCreditBalance, formatCredits } from '../services/credits';
 import { useSubscription } from '../context/SubscriptionContext';
-import { getHistory, HistoryItem } from '../services/history';
+import { getHistory, HistoryItem, updateHistoryItem } from '../services/history';
+import { checkVideoStatus } from '../services/videoGeneration';
 import VideoCard from '../components/VideoCard';
+import MyMovieCard from '../components/MyMovieCard';
 import { getAllModels, getModelById, getDefaultModel } from '../constants/aiModels';
 import COLORS from '../constants/colors';
 import TYPO from '../constants/typography';
@@ -174,6 +177,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [selectedModelId, setSelectedModelId] = useState<string>(getDefaultModel().id);
   const [credits, setCredits] = useState<number | null>(null);
   const [loadingCredits, setLoadingCredits] = useState(false);
+  const [myMovies, setMyMovies] = useState<HistoryItem[]>([]);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const CATEGORIES = getTranslatedCategories(t);
 
   // Helper: Get credit cost for a model name
@@ -234,7 +239,96 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     return true;
   };
 
-  const pickFromGallery = async () => {
+  const handleTextToVideo = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setShowImagePickerModal(false);
+    // Navigate to Edit screen with Text to Video model
+    navigation.navigate('Edit', { 
+      aiModel: 'text-to-video'
+    });
+  };
+
+  // Load my movies from history
+  const loadMyMovies = useCallback(async () => {
+    try {
+      const history = await getHistory();
+      setMyMovies(history);
+    } catch (error) {
+      console.error('❌ [Home] Failed to load movies:', error);
+    }
+  }, []);
+
+  // Poll processing videos
+  const pollProcessingVideos = useCallback(async () => {
+    try {
+      const history = await getHistory();
+      const processingVideos = history.filter(item => item.status === 'processing');
+      
+      if (processingVideos.length === 0) {
+        // No videos processing, stop polling
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        return;
+      }
+
+      // Check status of each processing video
+      for (const video of processingVideos) {
+        if (!video.taskId) continue;
+        
+        const status = await checkVideoStatus(video.taskId, 'kling');
+        
+        if (status.status === 'completed' && status.videoUrl) {
+          // Update history with completed video
+          await updateHistoryItem(video.taskId, {
+            status: 'completed',
+            imageUri: status.videoUrl,
+            completedAt: Date.now(),
+          });
+          
+          // Haptic feedback for completion
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          
+          console.log('✅ [Home] Video completed:', video.taskId);
+        } else if (status.status === 'failed') {
+          // Update history with failed status
+          await updateHistoryItem(video.taskId, {
+            status: 'failed',
+          });
+          
+          console.log('❌ [Home] Video failed:', video.taskId);
+        }
+      }
+      
+      // Reload movies to reflect changes
+      await loadMyMovies();
+    } catch (error) {
+      console.error('❌ [Home] Polling error:', error);
+    }
+  }, [loadMyMovies]);
+
+  // Start polling when screen focuses
+  useFocusEffect(
+    useCallback(() => {
+      loadMyMovies();
+      
+      // Start polling every 5 seconds
+      pollingIntervalRef.current = setInterval(pollProcessingVideos, 5000);
+      
+      // Initial poll
+      pollProcessingVideos();
+      
+      return () => {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+      };
+    }, [loadMyMovies, pollProcessingVideos])
+  );
+
+  const handleImageToVideo = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setShowImagePickerModal(false);
     const hasPermission = await requestPermissions();
@@ -249,7 +343,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       if (!result.canceled && result.assets[0]) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        navigation.navigate('Edit', { imageUri: result.assets[0].uri });
+        // Navigate to Edit screen with Image to Video model and the selected image
+        navigation.navigate('Edit', { 
+          imageUri: result.assets[0].uri,
+          aiModel: 'image-to-video'
+        });
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -257,31 +355,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         ? `${t('errors.pickImageFailed')}: ${error.message}` 
         : t('errors.pickImageMessage');
       Alert.alert(t('errors.pickImageFailed'), errorMsg);
-    }
-  };
-
-  const takePhoto = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setShowImagePickerModal(false);
-    const hasPermission = await requestCameraPermissions();
-    if (!hasPermission) return;
-
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: false,
-        quality: 0.7, // Reduced to prevent API Gateway 413 errors
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        navigation.navigate('Edit', { imageUri: result.assets[0].uri });
-      }
-    } catch (error) {
-      console.error('Error taking photo:', error);
-      const errorMsg = error instanceof Error && error.message 
-        ? `${t('errors.takePhotoFailed')}: ${error.message}` 
-        : t('errors.takePhotoMessage');
-      Alert.alert(t('errors.takePhotoFailed'), errorMsg);
     }
   };
 
@@ -459,6 +532,45 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* My Moovias Section */}
+        {myMovies.length > 0 && (
+          <View style={styles.categorySection}>
+            <View style={styles.categoryHeader}>
+              <Text style={styles.categoryTitle}>My Moovias</Text>
+              <Text style={styles.categorySubtitle}>
+                {myMovies.filter(m => m.status === 'processing').length > 0 
+                  ? `${myMovies.filter(m => m.status === 'processing').length} processing...`
+                  : `${myMovies.length} ${myMovies.length === 1 ? 'video' : 'videos'}`}
+              </Text>
+            </View>
+            <FlatList
+              horizontal
+              data={myMovies}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <MyMovieCard
+                  taskId={item.taskId}
+                  videoUri={item.imageUri}
+                  description={item.description}
+                  status={item.status || 'completed'}
+                  width={CARD_WIDTH * 1.2}
+                  height={CARD_WIDTH * 1.6}
+                  onPress={() => {
+                    if (item.status === 'completed' && item.imageUri) {
+                      navigation.navigate('VideoPlayer', {
+                        videoUrl: item.imageUri,
+                        description: item.description,
+                      });
+                    }
+                  }}
+                />
+              )}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalList}
+            />
+          </View>
+        )}
+
         {/* Video Sections */}
         {SECTION_ITEMS.map((section) => (
           <View key={section.id} style={styles.categorySection}>
@@ -656,7 +768,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         </TouchableOpacity>
       </Modal>
 
-      {/* Image Picker Modal - Bottom Sheet Style */}
+      {/* Model Type Selector Modal - Bottom Sheet Style */}
       <Modal
         visible={showImagePickerModal}
         transparent
@@ -674,12 +786,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>{t('home.choosePhoto')}</Text>
-            <Text style={styles.modalSubtitle}>{t('home.choosePhotoSubtitle')}</Text>
+            <Text style={styles.modalTitle}>Create a Video</Text>
+            <Text style={styles.modalSubtitle}>Choose your AI model type</Text>
             
             <TouchableOpacity 
               style={styles.modalOptionWrapper}
-              onPress={pickFromGallery}
+              onPress={handleTextToVideo}
               activeOpacity={0.8}
             >
               <LinearGradient
@@ -689,18 +801,18 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 style={styles.modalOption}
               >
                 <View style={styles.modalOptionIcon}>
-                  <Ionicons name="images" size={32} color="#FFF" />
+                  <Ionicons name="text" size={32} color="#FFF" />
                 </View>
                 <View style={styles.modalOptionContent}>
-                  <Text style={styles.modalOptionText}>{t('home.gallery')}</Text>
-                  <Text style={styles.modalOptionDescription}>{t('home.galleryDescription')}</Text>
+                  <Text style={styles.modalOptionText}>Text to Video</Text>
+                  <Text style={styles.modalOptionDescription}>Create videos from text descriptions</Text>
                 </View>
               </LinearGradient>
             </TouchableOpacity>
 
             <TouchableOpacity 
               style={styles.modalOptionWrapper}
-              onPress={takePhoto}
+              onPress={handleImageToVideo}
               activeOpacity={0.8}
             >
               <LinearGradient
@@ -710,11 +822,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 style={styles.modalOption}
               >
                 <View style={styles.modalOptionIcon}>
-                  <Ionicons name="camera" size={32} color="#FFF" />
+                  <Ionicons name="image" size={32} color="#FFF" />
                 </View>
                 <View style={styles.modalOptionContent}>
-                  <Text style={styles.modalOptionText}>{t('home.camera')}</Text>
-                  <Text style={styles.modalOptionDescription}>{t('home.cameraDescription')}</Text>
+                  <Text style={styles.modalOptionText}>Image to Video</Text>
+                  <Text style={styles.modalOptionDescription}>Transform images into animated videos</Text>
                 </View>
               </LinearGradient>
             </TouchableOpacity>
@@ -1377,6 +1489,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: TYPO.semibold,
     color: COLORS.text.secondary, // cinza para títulos de categoria (como no mock)
+  },
+  categorySubtitle: {
+    fontSize: 13,
+    fontFamily: TYPO.medium,
+    color: COLORS.text.secondary,
   },
   cardsContainer: {
     paddingHorizontal: 2,

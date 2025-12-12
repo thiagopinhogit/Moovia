@@ -6,6 +6,9 @@ export interface EditEffect {
   category: string;
 }
 
+// Alias for backward compatibility
+export type Effect = EditEffect;
+
 export interface Category {
   id: string;
   name: string;
@@ -17,12 +20,16 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Home: undefined;
   CategoryDetail: { effect: EditEffect };
-  Edit: { effect?: EditEffect; imageUri?: string; originalImageUri?: string };
+  Edit: { effect?: EditEffect; imageUri?: string; originalImageUri?: string; aiModel?: string };
   Loading: { imageUri: string; description: string; effect?: EditEffect };
   History: undefined;
   PurchaseSuccess: {
     purchaseType: 'credits' | 'subscription';
     credits?: number;
     subscriptionName?: string;
+  };
+  VideoPlayer: {
+    videoUrl: string;
+    description: string;
   };
 };

@@ -17,19 +17,21 @@ import {
   ActivityIndicator,
   Keyboard,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
+import { Video, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from '../types';
 import { generateImage } from '../services/api';
+import { generateVideo, checkVideoStatus, pollVideoCompletion } from '../services/videoGeneration';
 import { saveToHistory } from '../services/history';
 import { useSubscription } from '../context/SubscriptionContext';
 import subscriptionService from '../services/subscription';
@@ -37,6 +39,7 @@ import { getCreditBalance } from '../services/credits';
 import { getModelById, getDefaultModel } from '../constants/aiModels';
 import { CREDIT_COSTS } from '../constants/credits';
 import COLORS from '../constants/colors';
+import * as Application from 'expo-application';
 
 const { width } = Dimensions.get('window');
 
@@ -47,13 +50,16 @@ type EditScreenProps = {
 
 export default function EditScreen({ navigation, route }: EditScreenProps) {
   const { t } = useTranslation();
-  const { effect, imageUri: initialImageUri } = route.params;
+  const insets = useSafeAreaInsets();
+  const { effect, imageUri: initialImageUri, aiModel } = route.params;
   const [imageUri, setImageUri] = useState<string | null>(initialImageUri || null);
   const [description, setDescription] = useState('');
   const [showImagePickerModal, setShowImagePickerModal] = useState(false);
+  const [showModelSelectorModal, setShowModelSelectorModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [progressValue, setProgressValue] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [selectedAIModel, setSelectedAIModel] = useState<string>(aiModel || 'image-to-video');
   
   // Animation refs
   const loadingFadeAnim = useRef(new Animated.Value(0)).current;
@@ -254,6 +260,10 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
       return;
     }
 
+    // ⚠️ TEMPORARILY DISABLED FOR TESTING - Re-enable before production!
+    // TODO: Remove these comments and uncomment the code below when ready to enable paywall
+    
+    /*
     // 1. Check subscription first
     if (!isPro) {
       try {
@@ -309,6 +319,9 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
       Alert.alert('Error', 'Failed to check credits. Please try again.');
       return;
     }
+    */
+    
+    console.log('⚠️ [EditScreen] Paywall checks DISABLED for testing - proceeding with generation');
 
     // Haptic forte quando começa a gerar
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -331,16 +344,57 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
     startLoadingAnimations();
 
     try {
-      const result = await generateImage({
-        imageUri,
-        description: description.trim() || effect?.description || '',
-        effectId: effect?.id,
+      // Get user ID for video generation
+      const installationId = await Application.getIosIdForVendorAsync();
+      const userId = installationId ? `device_${installationId}` : 'anonymous';
+      
+      console.log('🎬 [EditScreen] Starting video generation...');
+      console.log('  - Model:', selectedAIModel);
+      console.log('  - Has Image:', !!imageUri);
+      console.log('  - Prompt:', description.trim());
+
+      // Convert local image to base64 if needed
+      let imageBase64: string | undefined;
+      if (selectedAIModel === 'image-to-video' && imageUri) {
+        try {
+          console.log('📸 [EditScreen] Converting image to base64...');
+          // Check if it's already a data URI
+          if (imageUri.startsWith('data:')) {
+            // Extract base64 from data URI (remove "data:image/...;base64," prefix)
+            imageBase64 = imageUri.split(',')[1];
+          } else {
+            // It's a local file URI, read it as base64
+            imageBase64 = await FileSystem.readAsStringAsync(imageUri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+          }
+          console.log('✅ [EditScreen] Image converted, size:', imageBase64.length, 'bytes');
+        } catch (error) {
+          console.error('❌ [EditScreen] Failed to convert image:', error);
+          Alert.alert('Error', 'Failed to process image. Please try again.');
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Step 1: Initiate video generation
+      const result = await generateVideo({
+        modelId: 'kling-2.5-turbo', // Use Kling 2.5 Turbo as default
+        prompt: description.trim() || effect?.description || '',
+        imageBase64: imageBase64,
+        duration: 5,
+        aspectRatio: '16:9',
       });
 
-      if (result.success && result.imageUrl) {
-        console.log('✅ [EditScreen] Generation successful!');
+      if (result.success && result.taskId) {
+        console.log('✅ [EditScreen] Video generation initiated!');
+        console.log('  - Task ID:', result.taskId);
+        console.log('  - Estimated time:', result.estimatedTime, 'seconds');
         
-        // Para os intervals
+        // Haptic de sucesso
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        
+        // Para os intervals de loading
         if (progressIntervalRef.current) {
           clearInterval(progressIntervalRef.current);
         }
@@ -351,25 +405,8 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
           clearInterval(messageIntervalRef.current);
         }
         
-        // Completa a barra rapidamente quando termina
-        const finalProgress = setInterval(() => {
-          setProgressValue((prev) => {
-            if (prev < 100) {
-              const newValue = Math.min(prev + 10, 100);
-              return newValue;
-            } else {
-              clearInterval(finalProgress);
-              return 100;
-            }
-          });
-        }, 50);
-        
-        // Haptic de sucesso quando a imagem é gerada!
-        await new Promise(resolve => setTimeout(resolve, 500));
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        
-        // Save to history
-        await saveToHistory(result.imageUrl, description.trim() || effect?.description || '');
+        // Save video task to history for tracking
+        await saveToHistory(result.taskId, description.trim() || effect?.description || '', 'processing');
         
         // Fade out loading
         Animated.timing(loadingFadeAnim, {
@@ -377,27 +414,31 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
           duration: 300,
           useNativeDriver: true,
         }).start(() => {
-          // Update the image after fade out
-          setImageUri(result.imageUrl || null);
           setIsLoading(false);
           loadingFadeAnim.setValue(0);
           progressAnim.setValue(0);
           setProgressValue(0);
           setLoadingMessage('');
-          // Reset GIF animations
-          slideUpAnim.setValue(80);
-          gifOpacityAnim.setValue(0);
-          scaleAnim.setValue(0.6);
+          
+          // Navigate back to Home - video will appear in "My Moovias" section
+          Alert.alert(
+            'Video Creation Started',
+            'Your video is being created! You can track the progress in the "My Moovias" section.',
+            [
+              {
+                text: 'OK',
+                onPress: () => navigation.goBack(),
+              },
+            ]
+          );
         });
-        
-        // Clear description after successful generation
-        setDescription('');
       } else {
+        // Failed to start video generation
         const errorMsg = result.error && result.error.trim() !== '' 
           ? result.error 
-          : 'Failed to generate image. Please try again.';
+          : 'Failed to start video generation. Please try again.';
         
-        console.error('❌ [EditScreen] Generation failed with error:', errorMsg);
+        console.error('❌ [EditScreen] Video generation failed with error:', errorMsg);
         
         // Haptic de erro
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -703,240 +744,148 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       {/* Hidden preloaded GIF for instant display */}
       <Image
         source={require('../../assets/images/splash-animation.gif')}
         style={{ width: 0, height: 0, opacity: 0 }}
       />
       
+      {/* Fixed Header with SafeArea */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.headerBackButton} onPress={handleBack}>
+            <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Create a Video</Text>
+          <View style={styles.headerRight} />
+        </View>
+      </View>
+      
       <KeyboardAvoidingView
-        // Stable keyboard handling: zero offset to evitar flutuação do topo
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
         keyboardVerticalOffset={0}
       >
-        {/* Back Button */}
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
-          contentInsetAdjustmentBehavior="never" // evita variação automática de inset no topo
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Clickable Image Area */}
-          <View style={styles.imageContainer}>
-            {imageUri ? (
-              <TouchableOpacity 
-                style={styles.imageWrapper}
-                onPress={handleImageAreaPress}
-                activeOpacity={0.8}
-              >
-                <Image
-                  key={imageUri}
-                  source={{ uri: imageUri }}
-                  style={styles.image}
-                  resizeMode="cover"
-                />
-                <View style={styles.imageOverlay}>
-                  <View style={styles.changeImageButton}>
-                    <Text style={styles.changeImageText}>{t('edit.tapToChangePhoto')}</Text>
-                  </View>
-                </View>
-                {/* Download Button - Only for generated images */}
-                {imageUri.startsWith('data:') && (
-                  <TouchableOpacity
-                    style={styles.downloadButton}
-                    onPress={downloadImage}
-                  >
-                    <View style={styles.downloadIconContainer}>
-                      {/* Arrow shaft */}
-                      <View style={styles.downloadArrowShaft} />
-                      {/* Arrow head */}
-                      <View style={styles.downloadArrowHead} />
-                      {/* Base line */}
-                      <View style={styles.downloadBaseLine} />
-                    </View>
-                  </TouchableOpacity>
-                )}
-                
-                {/* Loading Overlay - Only over image */}
-                <Animated.View 
-                  style={[
-                    styles.loadingOverlay,
-                    { 
-                      opacity: loadingFadeAnim,
-                      pointerEvents: isLoading ? 'auto' : 'none'
-                    }
-                  ]}
-                >
-                  <LinearGradient
-                    colors={['rgba(26, 11, 46, 0.95)', 'rgba(61, 43, 122, 0.95)', 'rgba(90, 63, 154, 0.95)']}
-                    style={styles.loadingGradient}
-                  >
-                    <View style={styles.loadingContent}>
-                      {/* Magic Circle with Sparkles */}
-                      <View style={styles.magicContainer}>
-                        {/* Center GIF logo - Always rendered for instant display */}
-                        <Animated.View
-                          style={[
-                            styles.logoContainer,
-                            { 
-                              opacity: gifOpacityAnim,
-                              transform: [
-                                { translateY: slideUpAnim },
-                                { scale: scaleAnim }
-                              ]
-                            },
-                          ]}
-                        >
-                          <Image
-                            source={require('../../assets/images/splash-animation.gif')}
-                            style={styles.logoGif}
-                            resizeMode="contain"
-                          />
-                        </Animated.View>
-                          
-                          {/* Sparkles - Above GIF */}
-                          {sparkleAnims.map((anim, index) => {
-                            const angle = (index * 360) / sparkleAnims.length;
-                            const radius = 70;
-                            const x = Math.cos((angle * Math.PI) / 180) * radius;
-                            const y = Math.sin((angle * Math.PI) / 180) * radius;
-                            
-                            return (
-                              <Animated.View
-                                key={index}
-                                style={[
-                                  styles.sparkle,
-                                  {
-                                    left: '50%',
-                                    marginLeft: x - 3,
-                                    top: '40%',
-                                    opacity: anim.opacity,
-                                    transform: [
-                                      { translateY: anim.translateY },
-                                      { scale: anim.scale },
-                                    ],
-                                  },
-                                ]}
-                              >
-                                <View style={styles.sparkleShape} />
-                              </Animated.View>
-                            );
-                          })}
-                        </View>
+          {/* Prompt Input - Always visible */}
+          <View style={styles.promptSection}>
+            <Text style={styles.sectionLabel}>Prompt</Text>
+            <TextInput
+              style={styles.promptInput}
+              placeholder="Type here a detailed description of what you want to see in your video"
+              placeholderTextColor="#999"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
 
-                        {/* Text */}
-                        <Text style={styles.brandText}>{t('edit.brandName')}</Text>
-                        <Text style={styles.loadingText}>
-                          {loadingMessage || t('edit.creatingMagic')}
-                        </Text>
-                        
-                        {/* Progress Bar - Refactor Completo */}
-                        <View style={{
-                          width: 250,
-                          marginTop: 20,
-                          alignItems: 'center',
-                        }}>
-                          {/* Background da barra */}
-                          <View style={{
-                            width: '100%',
-                            height: 8,
-                            backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                            borderRadius: 10,
-                            marginBottom: 12,
-                          }}>
-                            {/* Preenchimento */}
-                            <View style={{
-                              width: `${Math.max(progressValue, 5)}%`,
-                              height: '100%',
-                              backgroundColor: '#FFFFFF',
-                              borderRadius: 10,
-                            }} />
-                          </View>
-                          
-                          {/* Texto de porcentagem */}
-                          <Text style={{
-                            fontSize: 14,
-                            fontWeight: '600',
-                            color: '#FFFFFF',
-                            opacity: 0.8,
-                          }}>
-                            {progressValue}%
-                          </Text>
+          {/* Image Upload - Only for Image to Video mode */}
+          {selectedAIModel === 'image-to-video' && (
+            <View style={styles.imageUploadSection}>
+              <Text style={styles.sectionLabel}>Image</Text>
+            {imageUri ? (
+                <View style={styles.imagePreviewContainer}>
+                {/* Check if it's a video URL (contains .mp4) or an image */}
+                {imageUri.includes('.mp4') ? (
+                  <Video
+                    source={{ uri: imageUri }}
+                    style={styles.imagePreview}
+                    useNativeControls
+                    resizeMode={ResizeMode.CONTAIN}
+                    isLooping
+                    shouldPlay
+                  />
+                ) : (
+                  <Image
+                    source={{ uri: imageUri }}
+                    style={styles.imagePreview}
+                    resizeMode="cover"
+                  />
+                )}
+                  <TouchableOpacity
+                    style={styles.changeImageIconButton}
+                    onPress={handleImageAreaPress}
+                  >
+                    <Ionicons name="camera" size={20} color="#FFF" />
+                  </TouchableOpacity>
                         </View>
-                      </View>
-                    </LinearGradient>
-                  </Animated.View>
-                </TouchableOpacity>
             ) : (
               <TouchableOpacity 
-                style={styles.imagePlaceholder}
+                  style={styles.imageUploadButton}
                 onPress={handleImageAreaPress}
-                activeOpacity={0.8}
+                  activeOpacity={0.7}
               >
-                <View style={styles.placeholderIcon}>
-                  {/* Image icon - mountain and sun */}
-                  <View style={styles.iconSun} />
-                  <View style={styles.iconMountain1} />
-                  <View style={styles.iconMountain2} />
+                  <View style={styles.imageUploadIcon}>
+                    <Ionicons name="cloud-upload-outline" size={32} color={COLORS.primary.violet} />
                 </View>
-                <Text style={styles.placeholderTitle}>{t('edit.tapToSelect')}</Text>
-                <Text style={styles.placeholderSubtitle}>
-                  {t('edit.chooseOrTake')}
-                </Text>
+                  <Text style={styles.imageUploadText}>Upload Image</Text>
+                  <Text style={styles.imageUploadSubtext}>Tap to select from gallery or camera</Text>
               </TouchableOpacity>
             )}
           </View>
+          )}
 
-          {/* Input and Button Container */}
-          <View style={styles.inputButtonContainer}>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder={t('edit.descriptionPlaceholder')}
-                placeholderTextColor="#999"
-                value={description}
-                onChangeText={setDescription}
-                multiline
-                textAlignVertical="top"
-              />
+          {/* AI Model Selector - Dropdown style */}
+          <View style={styles.modelSection}>
+            <Text style={styles.sectionLabel}>AI Model</Text>
+            <TouchableOpacity 
+              style={styles.modelDropdown}
+              activeOpacity={0.7}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowModelSelectorModal(true);
+              }}
+            >
+              <View style={styles.modelDropdownContent}>
+                <Ionicons 
+                  name={selectedAIModel === 'text-to-video' ? 'text' : 'image'} 
+                  size={20} 
+                  color={COLORS.text.primary} 
+                />
+                <Text style={styles.modelDropdownText}>
+                  {selectedAIModel === 'text-to-video' ? 'Text to Video' : 'Image to Video'}
+                </Text>
+              </View>
+              <Ionicons name="chevron-down" size={20} color={COLORS.text.secondary} />
+            </TouchableOpacity>
             </View>
 
+          {/* Create Button */}
             <TouchableOpacity 
               style={[
-                styles.generateButtonWrapper,
-                ((!imageUri || (!description.trim() && !effect)) || isLoading) && styles.generateButtonDisabled
+              styles.createButtonWrapper,
+              ((selectedAIModel === 'image-to-video' && !imageUri) || !description.trim() || isLoading) && styles.createButtonDisabled
               ]} 
               onPress={handleGenerate}
-              disabled={!imageUri || (!description.trim() && !effect) || isLoading}
+            disabled={(selectedAIModel === 'image-to-video' && !imageUri) || !description.trim() || isLoading}
               activeOpacity={0.8}
             >
               <LinearGradient
                 colors={['#5B3F9E', '#3D2B7A', '#2A1A5E']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={styles.generateButton}
+              style={styles.createButton}
               >
                 {isLoading ? (
                   <View style={styles.buttonLoadingContainer}>
                     <ActivityIndicator size="small" color="#FFF" />
-                    <Text style={styles.generateButtonText}>{t('edit.generating')}</Text>
+                  <Text style={styles.createButtonText}>Creating...</Text>
                   </View>
                 ) : (
-                  <Text style={styles.generateButtonText}>{t('edit.generate')}</Text>
+                <Text style={styles.createButtonText}>Create</Text>
                 )}
               </LinearGradient>
             </TouchableOpacity>
-
-          </View>
         </ScrollView>
 
-        {/* Image Picker Modal - Bottom Sheet Style */}
+        {/* Image Picker Modal */}
         <Modal
           visible={showImagePickerModal}
           transparent
@@ -1001,8 +950,97 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
             </TouchableOpacity>
           </TouchableOpacity>
         </Modal>
+
+        {/* Model Selector Modal */}
+        <Modal
+          visible={showModelSelectorModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowModelSelectorModal(false)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowModelSelectorModal(false)}
+          >
+            <TouchableOpacity 
+              activeOpacity={1}
+              style={styles.modalContent}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.modalHandle} />
+              <Text style={styles.modalTitle}>Select AI Model</Text>
+              <Text style={styles.modalSubtitle}>Choose the model type for your video</Text>
+              
+              <TouchableOpacity 
+                style={[
+                  styles.modelModalOption,
+                  selectedAIModel === 'text-to-video' && styles.modelModalOptionSelected
+                ]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setSelectedAIModel('text-to-video');
+                  if (imageUri) {
+                    setImageUri(null);
+                  }
+                  setShowModelSelectorModal(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.modelModalIconContainer}>
+                  <Ionicons name="text" size={24} color={selectedAIModel === 'text-to-video' ? COLORS.primary.violet : COLORS.text.secondary} />
+                </View>
+                <View style={styles.modelModalContent}>
+                  <Text style={[
+                    styles.modelModalText,
+                    selectedAIModel === 'text-to-video' && styles.modelModalTextSelected
+                  ]}>
+                    Text to Video
+                  </Text>
+                  <Text style={styles.modelModalDescription}>
+                    Generate videos from text descriptions
+                  </Text>
+                </View>
+                {selectedAIModel === 'text-to-video' && (
+                  <Ionicons name="checkmark-circle" size={24} color={COLORS.primary.cyan} />
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[
+                  styles.modelModalOption,
+                  selectedAIModel === 'image-to-video' && styles.modelModalOptionSelected
+                ]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setSelectedAIModel('image-to-video');
+                  setShowModelSelectorModal(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.modelModalIconContainer}>
+                  <Ionicons name="image" size={24} color={selectedAIModel === 'image-to-video' ? COLORS.primary.violet : COLORS.text.secondary} />
+                </View>
+                <View style={styles.modelModalContent}>
+                  <Text style={[
+                    styles.modelModalText,
+                    selectedAIModel === 'image-to-video' && styles.modelModalTextSelected
+                  ]}>
+                    Image to Video
+                  </Text>
+                  <Text style={styles.modelModalDescription}>
+                    Transform images into animated videos
+                  </Text>
+                </View>
+                {selectedAIModel === 'image-to-video' && (
+                  <Ionicons name="checkmark-circle" size={24} color={COLORS.primary.cyan} />
+                )}
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -1014,201 +1052,150 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 40,
+  // Fixed Header with SafeArea
+  headerContainer: {
+    backgroundColor: COLORS.surface.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.ui.border,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  headerBackButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: COLORS.surface.secondary,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
   },
-  backIcon: {
-    fontSize: 24,
-    color: '#000',
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.text.primary,
+  },
+  headerRight: {
+    width: 40,
   },
   scrollContent: {
-    flexGrow: 1,
-    paddingTop: 40,
-    paddingBottom: 20, // Reduced padding at bottom
+    paddingBottom: 40,
   },
-  imageContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  // Prompt Section
+  promptSection: {
     paddingHorizontal: 20,
-    minHeight: 300,
+    paddingTop: 24,
   },
-  imageWrapper: {
-    width: '100%',
-    height: '100%',
-    position: 'relative',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 20,
-    backgroundColor: '#E0E0E0',
-  },
-  imageOverlay: {
-    position: 'absolute',
-    bottom: 20,
-    alignSelf: 'center',
-  },
-  changeImageButton: {
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  changeImageText: {
-    color: '#FFF',
+  sectionLabel: {
     fontSize: 14,
     fontWeight: '600',
+    color: COLORS.text.secondary,
+    marginBottom: 12,
   },
-  downloadButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 40,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  downloadIconContainer: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  downloadArrowShaft: {
-    width: 3,
-    height: 12,
-    backgroundColor: '#000',
-    position: 'absolute',
-    top: 0,
-  },
-  downloadArrowHead: {
-    width: 0,
-    height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderLeftWidth: 5,
-    borderRightWidth: 5,
-    borderTopWidth: 7,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#000',
-    position: 'absolute',
-    top: 11,
-  },
-  downloadBaseLine: {
-    width: 18,
-    height: 3,
-    backgroundColor: '#000',
-    position: 'absolute',
-    bottom: 0,
-    borderRadius: 1.5,
-  },
-  imagePlaceholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-  },
-  placeholderIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#E8E8E8',
-    marginBottom: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  iconSun: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#B0B0B0',
-    position: 'absolute',
-    top: 18,
-    right: 22,
-  },
-  iconMountain1: {
-    width: 0,
-    height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderLeftWidth: 16,
-    borderRightWidth: 16,
-    borderBottomWidth: 24,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#A0A0A0',
-    position: 'absolute',
-    bottom: 12,
-    left: 12,
-  },
-  iconMountain2: {
-    width: 0,
-    height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderLeftWidth: 12,
-    borderRightWidth: 12,
-    borderBottomWidth: 18,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#B8B8B8',
-    position: 'absolute',
-    bottom: 12,
-    right: 18,
-  },
-  placeholderTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 8,
-  },
-  placeholderSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-  inputButtonContainer: {
-    width: '100%',
-    marginBottom: 20, // Space at bottom
-  },
-  inputContainer: {
-    marginHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 16,
-  },
-  input: {
-    backgroundColor: '#FFF',
-    borderRadius: 20,
+  promptInput: {
+    backgroundColor: COLORS.surface.secondary,
+    borderRadius: 16,
     padding: 16,
     fontSize: 16,
-    color: '#000',
-    minHeight: 100, // Reduced from 120
-    maxHeight: 150, // Reduced from 200
+    color: COLORS.text.primary,
+    minHeight: 150,
+    maxHeight: 250,
+    borderWidth: 1,
+    borderColor: COLORS.ui.border,
+    textAlignVertical: 'top',
   },
-  generateButtonWrapper: {
-    marginHorizontal: 20,
-    marginBottom: 10,
+  // Image Upload Section
+  imageUploadSection: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  imageUploadButton: {
+    backgroundColor: COLORS.surface.secondary,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: COLORS.ui.border,
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageUploadIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS.opacity.violet20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  imageUploadText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+    marginBottom: 4,
+  },
+  imageUploadSubtext: {
+    fontSize: 13,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+  },
+  imagePreviewContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 200,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: COLORS.surface.secondary,
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+  },
+  changeImageIconButton: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    width: 40,
+    height: 40,
     borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Model Section
+  modelSection: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  modelDropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: COLORS.surface.secondary,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.ui.border,
+  },
+  modelDropdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  modelDropdownText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+  },
+  // Style Section - REMOVED
+  // Create Button
+  createButtonWrapper: {
+    marginHorizontal: 20,
+    marginTop: 32,
+    borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#3D2B7A',
     shadowOffset: { width: 0, height: 4 },
@@ -1216,30 +1203,30 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-  generateButton: {
+  createButton: {
     paddingVertical: 18,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  createButtonDisabled: {
+    opacity: 0.5,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  createButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '700',
   },
   buttonLoadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  generateButtonDisabled: {
-    opacity: 0.5,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  generateButtonText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '700',
-  },
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: COLORS.ui.overlay,
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -1263,13 +1250,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
-    color: '#000',
+    color: COLORS.text.primary,
   },
   modalSubtitle: {
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 32,
-    color: '#666',
+    color: COLORS.text.secondary,
   },
   modalOptionWrapper: {
     marginBottom: 16,
@@ -1302,6 +1289,46 @@ const styles = StyleSheet.create({
   modalOptionDescription: {
     fontSize: 13,
     color: 'rgba(255, 255, 255, 0.8)',
+  },
+  // Model Selector Modal styles
+  modelModalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: 20,
+    backgroundColor: COLORS.surface.secondary,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  modelModalOptionSelected: {
+    borderColor: COLORS.primary.violet,
+    backgroundColor: COLORS.opacity.violet20,
+  },
+  modelModalIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.opacity.violet20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modelModalContent: {
+    flex: 1,
+  },
+  modelModalText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+    marginBottom: 4,
+  },
+  modelModalTextSelected: {
+    color: COLORS.primary.violet,
+  },
+  modelModalDescription: {
+    fontSize: 13,
+    color: COLORS.text.secondary,
   },
   // Loading Overlay styles
   loadingOverlay: {
@@ -1382,6 +1409,114 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
     marginBottom: 8,
+  },
+  // AI Model Selector Styles
+  aiModelSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  aiModelLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text.secondary,
+    marginBottom: 12,
+  },
+  aiModelButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  aiModelButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.surface.secondary,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  aiModelButtonSelected: {
+    backgroundColor: COLORS.primary.violet,
+    borderColor: COLORS.primary.cyan,
+  },
+  aiModelButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#999',
+  },
+  aiModelButtonTextSelected: {
+    color: '#FFF',
+  },
+  // Text to Video Placeholder Styles
+  textToVideoPlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: COLORS.surface.secondary,
+    borderRadius: 20,
+    padding: 40,
+  },
+  textToVideoIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.opacity.violet20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  textToVideoTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.text.primary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  textToVideoSubtitle: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  // Text to Video Header (above input)
+  textToVideoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 16,
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: COLORS.surface.secondary,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: COLORS.primary.violet,
+  },
+  textToVideoIconSmall: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.opacity.violet20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  textToVideoHeaderText: {
+    flex: 1,
+  },
+  textToVideoHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text.primary,
+    marginBottom: 4,
+  },
+  textToVideoHeaderSubtitle: {
+    fontSize: 13,
+    color: COLORS.text.secondary,
+    lineHeight: 18,
   },
 });
 

@@ -34,12 +34,10 @@ const ApiRequestSchema = new Schema<IApiRequest>(
     userId: {
       type: String,
       required: true,
-      index: true,
     },
     timestamp: {
       type: Date,
       default: Date.now,
-      index: true,
     },
     requestType: {
       type: String,
@@ -49,7 +47,6 @@ const ApiRequestSchema = new Schema<IApiRequest>(
     success: {
       type: Boolean,
       required: true,
-      index: true,
     },
     errorMessage: String,
     processingTimeMs: {

@@ -154,6 +154,92 @@ app.post('/generate-image', async (req: Request, res: Response) => {
   }
 });
 
+// Lambda endpoint - Generate Video
+app.post('/generate-video', async (req: Request, res: Response) => {
+  console.log('🎬 Received video generation request:', {
+    userId: req.body.userId,
+    promptLength: req.body.prompt?.length,
+    hasImage: !!req.body.imageUrl || !!req.body.imageBase64,
+    model: req.body.model,
+    duration: req.body.duration,
+    aspectRatio: req.body.aspectRatio,
+  });
+
+  try {
+    // Create Lambda event object
+    const event = {
+      body: JSON.stringify(req.body),
+      headers: req.headers,
+      httpMethod: 'POST',
+      path: '/generate-video',
+      requestContext: {
+        requestId: `local-${Date.now()}`,
+        identity: {
+          sourceIp: req.ip,
+        },
+      },
+    };
+
+    // Call Lambda handler
+    const result = await handler(event as any);
+
+    // Parse Lambda response
+    const statusCode = result.statusCode || 200;
+    const body = JSON.parse(result.body);
+
+    console.log('📤 Video generation response:', { statusCode, success: body.success });
+
+    // Send response
+    res.status(statusCode).json(body);
+  } catch (error) {
+    console.error('❌ Video generation server error:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Lambda endpoint - Check Video Status
+app.get('/video-status/:taskId', async (req: Request, res: Response) => {
+  const { taskId } = req.params;
+  console.log('🔍 Checking video status for task:', taskId);
+
+  try {
+    // Create Lambda event object
+    const event = {
+      headers: req.headers,
+      httpMethod: 'GET',
+      path: `/video-status/${taskId}`,
+      rawPath: `/video-status/${taskId}`,
+      requestContext: {
+        requestId: `local-${Date.now()}`,
+        identity: {
+          sourceIp: req.ip,
+        },
+      },
+    };
+
+    // Call Lambda handler
+    const result = await handler(event as any);
+
+    // Parse Lambda response
+    const statusCode = result.statusCode || 200;
+    const body = JSON.parse(result.body);
+
+    console.log('📤 Video status response:', { statusCode, success: body.success, status: body.status });
+
+    // Send response
+    res.status(statusCode).json(body);
+  } catch (error) {
+    console.error('❌ Video status check server error:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
 // Credit endpoints
 app.get('/credits/balance', async (req: Request, res: Response) => {
   console.log('💰 GET /credits/balance');
@@ -162,6 +248,30 @@ app.get('/credits/balance', async (req: Request, res: Response) => {
   try {
     const event = {
       queryStringParameters: req.query,
+      httpMethod: 'GET',
+    };
+    
+    console.log('  Calling getBalance handler...');
+    const result = await getBalance(event as any);
+    
+    console.log('  Response status:', result.statusCode);
+    console.log('  Response body:', result.body.substring(0, 200));
+    
+    res.status(result.statusCode).json(JSON.parse(result.body));
+  } catch (error) {
+    console.error('  ❌ Error:', error);
+    res.status(500).json({ success: false, error: 'Internal error' });
+  }
+});
+
+// Alternative route format: /credits/:userId (for mobile app)
+app.get('/credits/:userId', async (req: Request, res: Response) => {
+  console.log('💰 GET /credits/:userId');
+  console.log('  userId:', req.params.userId);
+  
+  try {
+    const event = {
+      queryStringParameters: { userId: req.params.userId },
       httpMethod: 'GET',
     };
     
@@ -285,6 +395,8 @@ app.listen(PORT, () => {
   ╠════════════════════════════════════════╣
   ║   Endpoints:                           ║
   ║   • POST /generate-image               ║
+  ║   • POST /generate-video               ║
+  ║   • GET  /video-status/:taskId         ║
   ║   • GET  /credits/balance              ║
   ║   • GET  /credits/history              ║
   ║   • GET  /credits/stats                ║
