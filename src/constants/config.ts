@@ -11,13 +11,13 @@
  * Production: AWS Lambda + API Gateway
  * Development: Local backend (if running)
  */
-const USE_PRODUCTION = false; // Set to false for local development
+const USE_PRODUCTION = true; // Set to false for local development
 
 // Production (AWS Lambda)
 const PRODUCTION_BACKEND_URL = 'https://krgq9pgvb0.execute-api.sa-east-1.amazonaws.com/prod';
 
 // Local Development
-const BACKEND_IP = '192.168.0.25';
+const BACKEND_IP = '192.168.15.108';
 const BACKEND_PORT = '3000';
 const LOCAL_BACKEND_URL = `http://${BACKEND_IP}:${BACKEND_PORT}`;
 

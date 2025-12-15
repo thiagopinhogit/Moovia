@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../navigation';
 import * as Haptics from 'expo-haptics';
 import COLORS from '../constants/colors';
+import { getCreditBalance } from '../services/credits';
 
 type PurchaseSuccessRouteProp = RouteProp<RootStackParamList, 'PurchaseSuccess'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -66,15 +67,30 @@ export default function PurchaseSuccessScreen() {
       }),
     ]).start();
 
+    // Preload credit balance to ensure it's fresh
+    // Wait a bit for webhook to process on backend
+    const preloadTimer = setTimeout(async () => {
+      console.log('💰 [PurchaseSuccess] Preloading credit balance...');
+      await getCreditBalance();
+    }, 2000);
+
     // Auto-close after 3 seconds
-    const timer = setTimeout(() => {
+    const closeTimer = setTimeout(() => {
       handleClose();
     }, 3000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(preloadTimer);
+      clearTimeout(closeTimer);
+    };
   }, []);
 
-  const handleClose = () => {
+  const handleClose = async () => {
+    console.log('💰 [PurchaseSuccess] Refreshing credit balance before closing...');
+    
+    // Force refresh credits one more time before closing
+    await getCreditBalance();
+    
     Animated.parallel([
       Animated.timing(overlayFadeAnim, {
         toValue: 0,

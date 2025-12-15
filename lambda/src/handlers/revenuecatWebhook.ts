@@ -120,12 +120,19 @@ export async function handleRevenueCatWebhook(event: any): Promise<APIGatewayPro
   }
   
   try {
+    console.log('🔔 ====== REVENUECAT WEBHOOK RECEIVED ======');
+    console.log('⏰ Timestamp:', new Date().toISOString());
+    console.log('📍 Headers:', JSON.stringify(event.headers, null, 2));
+    
     // Verify webhook signature
     if (!verifyWebhookSignature(event)) {
+      console.error('❌ Webhook signature verification FAILED');
       return errorResponse(HTTP_STATUS.UNAUTHORIZED, 'Invalid webhook signature');
     }
+    console.log('✅ Webhook signature verified');
     
     await connectToDatabase();
+    console.log('✅ Database connected');
     
     // Parse webhook payload
     const payload = JSON.parse(event.body || '{}');
@@ -138,6 +145,14 @@ export async function handleRevenueCatWebhook(event: any): Promise<APIGatewayPro
     const appUserId = payload.event?.app_user_id;
     const productId = payload.event?.product_id;
     const eventId = payload.event?.id;
+    
+    // DEBUG: Log exact product ID with type and length
+    console.log('🔍 DEBUG - Product ID Analysis:');
+    console.log('  Raw value:', JSON.stringify(productId));
+    console.log('  Type:', typeof productId);
+    console.log('  Length:', productId?.length);
+    console.log('  Trimmed:', productId?.trim());
+    console.log('  Equals moovia_credits_1000?:', productId === 'moovia_credits_1000');
     
     // Extract App Store transaction IDs for duplicate detection
     // Use transaction_id (from App Store) as the unique identifier
@@ -168,6 +183,9 @@ export async function handleRevenueCatWebhook(event: any): Promise<APIGatewayPro
       storeTransactionId,
       originalTransactionId,
     });
+    console.log('👤 App User ID:', appUserId);
+    console.log('📦 Product ID:', productId);
+    console.log('🏷️  Event Type:', eventType);
     
     // Handle based on event type
     switch (eventType) {
@@ -196,12 +214,17 @@ export async function handleRevenueCatWebhook(event: any): Promise<APIGatewayPro
             });
           }
           
-          console.log(`✅ Granted ${SUBSCRIPTION_CREDITS[productMapping.key as keyof typeof SUBSCRIPTION_CREDITS]} credits to ${appUserId}`);
+          const creditsGranted = SUBSCRIPTION_CREDITS[productMapping.key as keyof typeof SUBSCRIPTION_CREDITS];
+          console.log(`✅ Granted ${creditsGranted} credits to ${appUserId}`);
+          console.log('🎉 ====== WEBHOOK SUCCESS ======');
           
           return successResponse({
             message: 'Subscription credits granted successfully',
-            creditsGranted: SUBSCRIPTION_CREDITS[productMapping.key as keyof typeof SUBSCRIPTION_CREDITS],
+            creditsGranted,
             duplicate: false,
+            userId: appUserId,
+            productId,
+            transactionId: storeTransactionId || eventId,
           });
         }
         break;
@@ -230,12 +253,17 @@ export async function handleRevenueCatWebhook(event: any): Promise<APIGatewayPro
             });
           }
           
-          console.log(`✅ Granted ${PURCHASE_CREDITS[productMapping.key as keyof typeof PURCHASE_CREDITS]} credits to ${appUserId}`);
+          const creditsGranted = PURCHASE_CREDITS[productMapping.key as keyof typeof PURCHASE_CREDITS];
+          console.log(`✅ Granted ${creditsGranted} credits to ${appUserId}`);
+          console.log('🎉 ====== WEBHOOK SUCCESS ======');
           
           return successResponse({
             message: 'Purchase credits granted successfully',
-            creditsGranted: PURCHASE_CREDITS[productMapping.key as keyof typeof PURCHASE_CREDITS],
+            creditsGranted,
             duplicate: false,
+            userId: appUserId,
+            productId,
+            transactionId: storeTransactionId || eventId,
           });
         }
         break;

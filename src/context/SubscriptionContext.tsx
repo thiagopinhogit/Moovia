@@ -5,6 +5,7 @@ import Purchases, { CustomerInfo } from 'react-native-purchases';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
+import { getCreditBalance } from '../services/credits';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -69,6 +70,16 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     
     // Sync status with Superwall
     await subscriptionService.syncSubscriptionStatus();
+    
+    // Refresh credit balance after subscription update
+    // This ensures credits are synced even if webhook is delayed
+    console.log('💰 [SubscriptionContext] Refreshing credit balance after subscription update...');
+    try {
+      await getCreditBalance();
+      console.log('💰 [SubscriptionContext] Credit balance refreshed successfully');
+    } catch (error) {
+      console.error('💰 [SubscriptionContext] Error refreshing credits:', error);
+    }
   };
 
   const checkSubscriptionStatus = async () => {
