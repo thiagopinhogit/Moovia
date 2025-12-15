@@ -40,9 +40,11 @@ export const SUBSCRIPTION_TIERS = {
 } as const;
 
 // Credit costs per model (MUST match frontend: src/constants/credits.ts)
+// Formula: API Cost / 0.005 (cost per credit) = Credits needed
+// With 80% margin: $9.99 plan → $2 max cost → $0.005 per credit
 export const CREDIT_COSTS = {
-  'gemini-pro': 50,
-  'gemini-flash': 20,
+  'gemini-pro': 2,    // ~$0.01 API cost → 2 credits (80% margin)
+  'gemini-flash': 1,  // ~$0.005 API cost → 1 credit (80% margin)
 } as const;
 
 export const HTTP_STATUS = {

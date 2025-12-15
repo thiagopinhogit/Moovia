@@ -14,6 +14,7 @@ type MyMovieCardProps = {
   width: number;
   height: number;
   onPress?: () => void;
+  onCancel?: (taskId: string) => void; // New prop for cancellation
 };
 
 const MyMovieCard: React.FC<MyMovieCardProps> = ({
@@ -24,6 +25,7 @@ const MyMovieCard: React.FC<MyMovieCardProps> = ({
   width,
   height,
   onPress,
+  onCancel,
 }) => {
   const isProcessing = status === 'processing';
   const isFailed = status === 'failed';
@@ -77,17 +79,28 @@ const MyMovieCard: React.FC<MyMovieCardProps> = ({
           </View>
         )}
         
-        <View style={styles.overlay}>
-          <Text style={styles.description} numberOfLines={2}>
-            {description || 'Untitled Video'}
-          </Text>
-          {isProcessing && (
+        {isProcessing && (
+          <View style={styles.overlay}>
             <View style={styles.statusBadge}>
               <View style={styles.pulseDot} />
               <Text style={styles.statusText}>Processing</Text>
             </View>
-          )}
-        </View>
+            
+            {/* Cancel button */}
+            {onCancel && taskId && (
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onCancel(taskId);
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close-circle" size={24} color="rgba(255,255,255,0.9)" />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -183,6 +196,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: TYPO.medium,
     color: '#FFFFFF',
+  },
+  cancelButton: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
 });
 

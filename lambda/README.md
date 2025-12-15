@@ -2,6 +2,26 @@
 
 Backend seguro para geração de imagens com Google Gemini API.
 
+## 🧪 Teste Local com ngrok (Webhooks)
+
+Para testar webhooks do RevenueCat localmente:
+
+```bash
+# Terminal 1: Iniciar servidor
+npm run dev
+
+# Terminal 2: Iniciar ngrok
+npm run ngrok
+# Ou: ./start-ngrok.sh
+
+# Terminal 3: Testar webhook
+./test-webhook.sh https://your-ngrok-url.ngrok-free.app
+```
+
+📖 **Guia completo**: Ver [NGROK_WEBHOOK_SETUP.md](./NGROK_WEBHOOK_SETUP.md)
+
+---
+
 ## 🎯 Por que usar Lambda?
 
 ✅ **Segurança**: API Key do Google fica no servidor (não exposta no app)  

@@ -23,6 +23,7 @@ export interface AIModel {
 // Available AI Models
 export const AI_MODELS: Record<string, AIModel> = {
   // Gemini Pro - Higher quality, more credits
+  // API Cost: ~$0.01 | 80% margin → 2 credits
   'gemini-pro': {
     id: 'gemini-pro',
     displayName: 'Gemini Pro',
@@ -34,10 +35,11 @@ export const AI_MODELS: Record<string, AIModel> = {
     quality: 'high',
     censored: true,
     free: true,
-    description: '🔥 50 credits per image',
+    description: '🔥 2 credits per image',
   },
 
   // Gemini Flash - Faster, fewer credits
+  // API Cost: ~$0.005 | 80% margin → 1 credit
   'gemini-flash': {
     id: 'gemini-flash',
     displayName: 'Gemini Flash',
@@ -49,7 +51,7 @@ export const AI_MODELS: Record<string, AIModel> = {
     quality: 'medium',
     censored: true,
     free: true,
-    description: '⚡ 20 credits per image',
+    description: '⚡ 1 credit per image',
   },
 };
 

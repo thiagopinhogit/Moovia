@@ -12,16 +12,15 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // Subscription product IDs and their display names
 const SUBSCRIPTION_PRODUCTS: Record<string, string> = {
-  'lumoproweekly': 'Moovia Pro Weekly',
-  'lumopromonthly': 'Moovia Pro Monthly',
-  'lumoproannual': 'Moovia Pro Annual',
+  'mooviaproweekly': 'Moovia Pro Weekly',
+  'mooviaproannual': 'Moovia Pro Annual',
 };
 
 // One-time purchase product IDs and their credit amounts
 const CREDIT_PRODUCTS: Record<string, number> = {
-  'credits_1000': 1000,
-  'credits_5000': 5000,
-  'credits_10000': 10000,
+  'moovia_credits_1000': 1000,
+  'moovia_credits_5000': 5000,
+  'moovia_credits_10000': 10000,
 };
 
 export function usePurchaseListener() {

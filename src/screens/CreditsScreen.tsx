@@ -197,11 +197,11 @@ export default function CreditsScreen({ navigation }: any) {
           </Text>
           <View style={styles.costCard}>
             <Text style={styles.costModel}>🚀 Gemini Pro</Text>
-            <Text style={styles.costAmount}>50 credits</Text>
+            <Text style={styles.costAmount}>2 credits</Text>
           </View>
           <View style={styles.costCard}>
             <Text style={styles.costModel}>⚡ Gemini Flash</Text>
-            <Text style={styles.costAmount}>20 credits</Text>
+            <Text style={styles.costAmount}>1 credit</Text>
           </View>
         </View>
 

@@ -12,7 +12,7 @@ export interface IUserCredits extends Document {
   lifetimeCreditsEarned: number; // Total credits ever earned (for analytics)
   lifetimeCreditsSpent: number; // Total credits ever spent (for analytics)
   lastUpdated: Date;
-  subscriptionTier?: string; // Current subscription (lumoproweekly, lumopromonthly, lumoproannual)
+  subscriptionTier?: string; // Current subscription (mooviaproweekly, mooviaproannual)
   subscriptionExpiry?: Date; // When subscription expires
   createdAt: Date;
 }
@@ -46,7 +46,7 @@ const UserCreditsSchema = new Schema<IUserCredits>({
   },
   subscriptionTier: {
     type: String,
-    enum: ['lumoproweekly', 'lumopromonthly', 'lumoproannual', null],
+    enum: ['mooviaproweekly', 'mooviaproannual', null],
     default: null,
   },
   subscriptionExpiry: {

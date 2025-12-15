@@ -81,25 +81,22 @@ function verifyWebhookSignature(event: any): boolean {
  */
 function mapProductToCredits(productId: string): { type: 'subscription' | 'purchase'; key: string } | null {
   // Subscription products (recurring)
-  if (productId === 'lumoproweekly' || productId === 'lumo_pro_weekly') {
-    return { type: 'subscription', key: 'lumoproweekly' };
+  if (productId === 'mooviaproweekly' || productId === 'moovia_pro_weekly') {
+    return { type: 'subscription', key: 'mooviaproweekly' };
   }
-  if (productId === 'lumopromonthly' || productId === 'lumo_pro_monthly') {
-    return { type: 'subscription', key: 'lumopromonthly' };
-  }
-  if (productId === 'lumoproannual' || productId === 'lumo_pro_annual') {
-    return { type: 'subscription', key: 'lumoproannual' };
+  if (productId === 'mooviaproannual' || productId === 'moovia_pro_annual') {
+    return { type: 'subscription', key: 'mooviaproannual' };
   }
   
   // One-time purchase products (non-consumable)
-  if (productId === 'credits_1000' || productId === 'lumo_credits_1000') {
-    return { type: 'purchase', key: 'credits_1000' };
+  if (productId === 'moovia_credits_1000') {
+    return { type: 'purchase', key: 'moovia_credits_1000' };
   }
-  if (productId === 'credits_5000' || productId === 'lumo_credits_5000') {
-    return { type: 'purchase', key: 'credits_5000' };
+  if (productId === 'moovia_credits_5000') {
+    return { type: 'purchase', key: 'moovia_credits_5000' };
   }
-  if (productId === 'credits_10000' || productId === 'lumo_credits_10000') {
-    return { type: 'purchase', key: 'credits_10000' };
+  if (productId === 'moovia_credits_10000') {
+    return { type: 'purchase', key: 'moovia_credits_10000' };
   }
   
   console.warn(`⚠️ Unknown product ID: ${productId}`);

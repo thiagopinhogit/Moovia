@@ -201,8 +201,10 @@ app.post('/generate-video', async (req: Request, res: Response) => {
 });
 
 // Lambda endpoint - Check Video Status
-app.get('/video-status/:taskId', async (req: Request, res: Response) => {
-  const { taskId } = req.params;
+// Use wildcard to support taskIds with slashes (like Google Veo operations)
+app.get('/video-status/*', async (req: Request, res: Response) => {
+  // Extract taskId from path (everything after /video-status/)
+  const taskId = req.params[0]; // Wildcard captures everything
   console.log('🔍 Checking video status for task:', taskId);
 
   try {

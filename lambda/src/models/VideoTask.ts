@@ -8,7 +8,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IVideoTask extends Document {
   userId: string;
   taskId: string;
-  provider: 'kling' | 'runway' | 'luma' | 'pika';
+  provider: 'kling' | 'runway' | 'luma' | 'pika' | 'google-veo';
   videoModel: string; // Renamed from 'model' to avoid conflict with Document.model
   status: 'pending' | 'processing' | 'completed' | 'failed';
   prompt: string;
@@ -31,7 +31,7 @@ export interface IVideoTask extends Document {
 const VideoTaskSchema = new Schema<IVideoTask>({
   userId: { type: String, required: true },
   taskId: { type: String, required: true, unique: true },
-  provider: { type: String, required: true, enum: ['kling', 'runway', 'luma', 'pika'] },
+  provider: { type: String, required: true, enum: ['kling', 'runway', 'luma', 'pika', 'google-veo'] },
   videoModel: { type: String, required: true }, // Renamed from 'model'
   status: { 
     type: String, 

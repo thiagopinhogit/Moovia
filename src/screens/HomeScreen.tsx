@@ -207,7 +207,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const handleMainButton = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setShowImagePickerModal(true);
+    // Go directly to Edit screen with text-to-video as default
+    navigation.navigate('Edit', { 
+      aiModel: 'text-to-video'
+    });
   };
 
   const handleTrendsPress = () => {
@@ -258,6 +261,42 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     }
   }, []);
 
+  // Cancel video generation
+  const handleCancelVideo = async (taskId: string) => {
+    try {
+      console.log('🛑 [Home] Cancelling video:', taskId);
+      
+      Alert.alert(
+        'Cancel Video',
+        'Are you sure you want to cancel this video generation?',
+        [
+          {
+            text: 'No',
+            style: 'cancel',
+          },
+          {
+            text: 'Yes, Cancel',
+            style: 'destructive',
+            onPress: async () => {
+              // Mark as failed in history
+              await updateHistoryItem(taskId, {
+                status: 'failed',
+              });
+              
+              // Reload movies to update UI
+              await loadMyMovies();
+              
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              console.log('✅ [Home] Video cancelled:', taskId);
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('❌ [Home] Failed to cancel video:', error);
+    }
+  };
+
   // Poll processing videos
   const pollProcessingVideos = useCallback(async () => {
     try {
@@ -276,6 +315,23 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       // Check status of each processing video
       for (const video of processingVideos) {
         if (!video.taskId) continue;
+        
+        // Check if video generation timed out (10 minutes)
+        const createdAt = video.createdAt || Date.now();
+        const now = Date.now();
+        const timeDiffMs = now - createdAt;
+        const timeoutMs = 10 * 60 * 1000; // 10 minutes
+        
+        if (timeDiffMs > timeoutMs) {
+          console.log(`⏱️ [Home] Video generation timeout for task: ${video.taskId}`);
+          
+          // Mark as failed
+          await updateHistoryItem(video.taskId, {
+            status: 'failed',
+          });
+          
+          continue;
+        }
         
         const status = await checkVideoStatus(video.taskId, 'kling');
         
@@ -360,7 +416,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const handleEffectPress = (effect: any) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setShowImagePickerModal(true);
+    // Go directly to Edit screen with text-to-video as default
+    navigation.navigate('Edit', { 
+      aiModel: 'text-to-video'
+    });
   };
 
   const handleHistoryPress = () => {
@@ -377,7 +436,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const handleRecentItemPress = (item: HistoryItem) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setShowImagePickerModal(true);
+    // Go directly to Edit screen with text-to-video as default
+    navigation.navigate('Edit', { 
+      aiModel: 'text-to-video'
+    });
   };
 
   const loadRecentHistory = useCallback(async () => {
@@ -537,24 +599,28 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           <View style={styles.categorySection}>
             <View style={styles.categoryHeader}>
               <Text style={styles.categoryTitle}>My Moovias</Text>
-              <Text style={styles.categorySubtitle}>
-                {myMovies.filter(m => m.status === 'processing').length > 0 
-                  ? `${myMovies.filter(m => m.status === 'processing').length} processing...`
-                  : `${myMovies.length} ${myMovies.length === 1 ? 'video' : 'videos'}`}
-              </Text>
+              <TouchableOpacity 
+                style={styles.viewAllButton}
+                onPress={handleHistoryPress}
+              >
+                <Text style={styles.viewAllText}>See All</Text>
+                <Ionicons name="arrow-forward" size={16} color={COLORS.text.secondary} fontWeight="400" />
+              </TouchableOpacity>
             </View>
-            <FlatList
+            <ScrollView
               horizontal
-              data={myMovies}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.cardsContainer}
+            >
+              {myMovies.map((item) => (
                 <MyMovieCard
+                  key={item.id}
                   taskId={item.taskId}
                   videoUri={item.imageUri}
                   description={item.description}
                   status={item.status || 'completed'}
-                  width={CARD_WIDTH * 1.2}
-                  height={CARD_WIDTH * 1.6}
+                  width={CARD_WIDTH}
+                  height={CARD_WIDTH * 1.35}
                   onPress={() => {
                     if (item.status === 'completed' && item.imageUri) {
                       navigation.navigate('VideoPlayer', {
@@ -563,11 +629,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                       });
                     }
                   }}
+                  onCancel={item.status === 'processing' ? handleCancelVideo : undefined}
                 />
-              )}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalList}
-            />
+              ))}
+            </ScrollView>
           </View>
         )}
 
@@ -593,7 +658,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                   height={CARD_WIDTH * 1.35}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setShowImagePickerModal(true);
+                  // Go directly to Edit screen with text-to-video as default
+                  navigation.navigate('Edit', { 
+                    aiModel: 'text-to-video'
+                  });
                 }}
               />
             ))}
@@ -1453,8 +1521,8 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.brand.cyan,
+    fontWeight: '400',
+    color: COLORS.text.secondary,
   },
   recentCardsContainer: {
     paddingHorizontal: 20,
@@ -1478,7 +1546,9 @@ const styles = StyleSheet.create({
   categoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginLeft: 20,
+    marginRight: 20,
     marginBottom: 16,
     gap: 10,
   },

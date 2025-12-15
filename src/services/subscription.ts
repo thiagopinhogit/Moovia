@@ -14,7 +14,7 @@ const REVENUECAT_API_KEYS = {
   android: 'YOUR_REVENUECAT_ANDROID_API_KEY',
 };
 
-const SUPERWALL_API_KEY = 'pk_0ymj65UawvQji4nRBUXqh';
+const SUPERWALL_API_KEY = 'pk_NGQ0ze9b1MwetXf7K5sDZ';
 
 // IMPORTANT: Use the entitlement IDENTIFIER (not the ID) from RevenueCat dashboard
 // The identifier is usually something like 'pro', 'premium', etc.

@@ -38,6 +38,7 @@ import subscriptionService from '../services/subscription';
 import { getCreditBalance } from '../services/credits';
 import { getModelById, getDefaultModel } from '../constants/aiModels';
 import { CREDIT_COSTS } from '../constants/credits';
+import { getAvailableVideoModels, getVideoModelById, getModelsByProviderGrouped, VideoModel, ModelProvider } from '../constants/videoModels';
 import COLORS from '../constants/colors';
 import * as Application from 'expo-application';
 
@@ -55,11 +56,103 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
   const [imageUri, setImageUri] = useState<string | null>(initialImageUri || null);
   const [description, setDescription] = useState('');
   const [showImagePickerModal, setShowImagePickerModal] = useState(false);
-  const [showModelSelectorModal, setShowModelSelectorModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [progressValue, setProgressValue] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [selectedAIModel, setSelectedAIModel] = useState<string>(aiModel || 'image-to-video');
+  
+  // Video configuration options with modals
+  const [showModelModal, setShowModelModal] = useState(false);
+  const [showAspectRatioModal, setShowAspectRatioModal] = useState(false);
+  const [showDurationModal, setShowDurationModal] = useState(false);
+  const [showQualityModal, setShowQualityModal] = useState(false);
+  
+  // Provider expansion state
+  const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set());
+  
+  // Video generation cancellation
+  const [isCancelled, setIsCancelled] = useState(false);
+  const cancelGenerationRef = useRef(false);
+  
+  // Get default model
+  const defaultModel = getAvailableVideoModels()[0];
+  const [selectedModel, setSelectedModel] = useState<VideoModel>(defaultModel);
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState(defaultModel.aspectRatios[0]);
+  const [selectedDuration, setSelectedDuration] = useState(5);
+  const [selectedQuality, setSelectedQuality] = useState<'720p' | '1080p'>('720p');
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  
+  // Calculate credit cost based on selected model and mode
+  const getVideoCreditCost = (): number => {
+    const isImageToVideo = selectedAIModel === 'image-to-video' && !!imageUri;
+    // Base cost per second
+    const costPerSecond = selectedModel.creditsPerSecond;
+    // Multiply by duration
+    let totalCost = Math.ceil(costPerSecond * selectedDuration);
+    
+    // Image-to-video typically costs 50% more
+    if (isImageToVideo) {
+      totalCost = Math.ceil(totalCost * 1.5);
+    }
+    
+    return totalCost;
+  };
+  
+  // Get icon for aspect ratio
+  const getAspectRatioIcon = (ratio: string): keyof typeof Ionicons.glyphMap => {
+    if (ratio === '16:9') {
+      return 'tablet-landscape-outline'; // Landscape/horizontal
+    } else if (ratio === '1:1') {
+      return 'square-outline'; // Square
+    } else if (ratio === '9:16') {
+      return 'phone-portrait-outline'; // Portrait/vertical
+    }
+    return 'crop-outline'; // Default
+  };
+  
+  // Toggle provider expansion
+  const toggleProvider = (providerId: string) => {
+    const newExpanded = new Set(expandedProviders);
+    if (newExpanded.has(providerId)) {
+      newExpanded.delete(providerId);
+    } else {
+      newExpanded.add(providerId);
+    }
+    setExpandedProviders(newExpanded);
+  };
+  
+  // Update available options when model changes
+  useEffect(() => {
+    if (selectedModel) {
+      // Reset to first available aspect ratio if current one is not supported
+      if (!selectedModel.aspectRatios.includes(selectedAspectRatio)) {
+        setSelectedAspectRatio(selectedModel.aspectRatios[0]);
+      }
+      // Reset duration if it exceeds max or is invalid
+      const validDurations = getValidDurations();
+      if (!validDurations.includes(selectedDuration)) {
+        setSelectedDuration(validDurations[0]);
+      }
+    }
+  }, [selectedModel]);
+  
+  // Get valid durations for the selected model
+  const getValidDurations = (): number[] => {
+    // Kling models: only 5s or 10s
+    if (selectedModel.provider === 'kling') {
+      return selectedModel.maxDuration >= 10 ? [5, 10] : [5];
+    }
+    // Veo 3.1 (not Fast): 4s, 6s, 8s
+    if (selectedModel.id === 'veo-3.1-generate-preview') {
+      return [4, 6, 8];
+    }
+    // Veo Fast: only 8s
+    if (selectedModel.provider === 'google-veo') {
+      return [8];
+    }
+    // Default: all durations up to max
+    return Array.from({ length: selectedModel.maxDuration }, (_, i) => i + 1);
+  };
   
   // Animation refs
   const loadingFadeAnim = useRef(new Animated.Value(0)).current;
@@ -245,25 +338,72 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
     }
   };
 
+  const handleCancelGeneration = () => {
+    console.log('🛑 [EditScreen] User requested to cancel generation');
+    
+    Alert.alert(
+      'Cancel Generation',
+      'Are you sure you want to cancel the video generation?',
+      [
+        {
+          text: 'No',
+          style: 'cancel',
+        },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: () => {
+            cancelGenerationRef.current = true;
+            setIsCancelled(true);
+            
+            // Stop all intervals
+            if (progressIntervalRef.current) {
+              clearInterval(progressIntervalRef.current);
+            }
+            if (hapticIntervalRef.current) {
+              clearInterval(hapticIntervalRef.current);
+            }
+            if (messageIntervalRef.current) {
+              clearInterval(messageIntervalRef.current);
+            }
+            
+            // Fade out loading
+            Animated.timing(loadingFadeAnim, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }).start(() => {
+              setIsLoading(false);
+            });
+            
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            console.log('✅ [EditScreen] Generation cancelled by user');
+          },
+        },
+      ]
+    );
+  };
+
   const handleGenerate = async () => {
     console.log('🚀 [EditScreen] Generate button pressed');
     
-    if (!imageUri) {
-      console.warn('⚠️ [EditScreen] No image selected');
+    // Reset cancellation flag
+    cancelGenerationRef.current = false;
+    setIsCancelled(false);
+    
+    // Validate based on selected mode
+    if (selectedAIModel === 'image-to-video' && !imageUri) {
+      console.warn('⚠️ [EditScreen] No image selected for image-to-video');
       Alert.alert(t('errors.noImage'), t('errors.noImageMessage'));
       return;
     }
 
-    if (!description.trim() && !effect) {
-      console.warn('⚠️ [EditScreen] No description or effect');
+    if (selectedAIModel === 'text-to-video' && !description.trim()) {
+      console.warn('⚠️ [EditScreen] No description for text-to-video');
       Alert.alert(t('errors.noDescription'), t('errors.noDescriptionMessage'));
       return;
     }
 
-    // ⚠️ TEMPORARILY DISABLED FOR TESTING - Re-enable before production!
-    // TODO: Remove these comments and uncomment the code below when ready to enable paywall
-    
-    /*
     // 1. Check subscription first
     if (!isPro) {
       try {
@@ -319,25 +459,22 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
       Alert.alert('Error', 'Failed to check credits. Please try again.');
       return;
     }
-    */
     
-    console.log('⚠️ [EditScreen] Paywall checks DISABLED for testing - proceeding with generation');
+    console.log('✅ [EditScreen] Paywall checks passed - proceeding with generation');
 
     // Haptic forte quando começa a gerar
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-    // Recolher o teclado
-    Keyboard.dismiss();
-    
-    // Aguardar um pouco para o teclado fechar
-    await new Promise(resolve => setTimeout(resolve, 300));
-
+    // Set loading state IMMEDIATELY for instant UI feedback
     setIsLoading(true);
+    
+    // Recolher o teclado (non-blocking)
+    Keyboard.dismiss();
     
     // Animar o fade in do overlay
     Animated.timing(loadingFadeAnim, {
       toValue: 1,
-      duration: 400,
+      duration: 300,
       useNativeDriver: true,
     }).start();
     
@@ -378,12 +515,20 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
       }
 
       // Step 1: Initiate video generation
+      console.log('📋 [EditScreen] Generation settings:', {
+        model: selectedModel.displayName,
+        aspectRatio: selectedAspectRatio,
+        duration: selectedDuration,
+        quality: selectedQuality,
+        hasImage: !!imageBase64,
+      });
+      
       const result = await generateVideo({
-        modelId: 'kling-2.5-turbo', // Use Kling 2.5 Turbo as default
+        modelId: selectedModel.id as any,
         prompt: description.trim() || effect?.description || '',
         imageBase64: imageBase64,
-        duration: 5,
-        aspectRatio: '16:9',
+        duration: selectedDuration,
+        aspectRatio: selectedAspectRatio as '16:9' | '9:16' | '1:1',
       });
 
       if (result.success && result.taskId) {
@@ -408,30 +553,15 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
         // Save video task to history for tracking
         await saveToHistory(result.taskId, description.trim() || effect?.description || '', 'processing');
         
-        // Fade out loading
-        Animated.timing(loadingFadeAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }).start(() => {
-          setIsLoading(false);
-          loadingFadeAnim.setValue(0);
-          progressAnim.setValue(0);
-          setProgressValue(0);
-          setLoadingMessage('');
-          
-          // Navigate back to Home - video will appear in "My Moovias" section
-          Alert.alert(
-            'Video Creation Started',
-            'Your video is being created! You can track the progress in the "My Moovias" section.',
-            [
-              {
-                text: 'OK',
-                onPress: () => navigation.goBack(),
-              },
-            ]
-          );
-        });
+        // Reset loading state
+        setIsLoading(false);
+        loadingFadeAnim.setValue(0);
+        progressAnim.setValue(0);
+        setProgressValue(0);
+        setLoadingMessage('');
+        
+        // Navigate back to Home immediately - video will appear in "My Moovias" section
+        navigation.goBack();
       } else {
         // Failed to start video generation
         const errorMsg = result.error && result.error.trim() !== '' 
@@ -772,24 +902,51 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Prompt Input - Always visible */}
-          <View style={styles.promptSection}>
-            <Text style={styles.sectionLabel}>Prompt</Text>
-            <TextInput
-              style={styles.promptInput}
-              placeholder="Type here a detailed description of what you want to see in your video"
-              placeholderTextColor="#999"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              textAlignVertical="top"
-            />
+          {/* Tab Selector - Text to Video / Image to Video */}
+          <View style={styles.tabContainer}>
+            <TouchableOpacity 
+              style={[
+                styles.tab,
+                selectedAIModel === 'text-to-video' && styles.tabActive
+              ]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setSelectedAIModel('text-to-video');
+                if (imageUri) setImageUri(null);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={[
+                styles.tabText,
+                selectedAIModel === 'text-to-video' && styles.tabTextActive
+              ]}>
+                Text to Video
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[
+                styles.tab,
+                selectedAIModel === 'image-to-video' && styles.tabActive
+              ]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setSelectedAIModel('image-to-video');
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={[
+                styles.tabText,
+                selectedAIModel === 'image-to-video' && styles.tabTextActive
+              ]}>
+                Image to Video
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Image Upload - Only for Image to Video mode */}
           {selectedAIModel === 'image-to-video' && (
             <View style={styles.imageUploadSection}>
-              <Text style={styles.sectionLabel}>Image</Text>
             {imageUri ? (
                 <View style={styles.imagePreviewContainer}>
                 {/* Check if it's a video URL (contains .mp4) or an image */}
@@ -823,48 +980,108 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
                   activeOpacity={0.7}
               >
                   <View style={styles.imageUploadIcon}>
-                    <Ionicons name="cloud-upload-outline" size={32} color={COLORS.primary.violet} />
+                    <Ionicons name="image-outline" size={48} color="#666" />
                 </View>
-                  <Text style={styles.imageUploadText}>Upload Image</Text>
-                  <Text style={styles.imageUploadSubtext}>Tap to select from gallery or camera</Text>
               </TouchableOpacity>
             )}
           </View>
           )}
 
-          {/* AI Model Selector - Dropdown style */}
-          <View style={styles.modelSection}>
-            <Text style={styles.sectionLabel}>AI Model</Text>
+          {/* Prompt Input - Always visible */}
+          <View style={styles.promptSection}>
+            <TextInput
+              style={styles.promptInput}
+              placeholder="Type here a detailed description of what you want to see in your video"
+              placeholderTextColor="#666"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
+
+          {/* Configuration Options */}
+          <View style={styles.configSection}>
+            {/* Model Selector - Full width row */}
             <TouchableOpacity 
-              style={styles.modelDropdown}
+              style={styles.configOptionFull} 
               activeOpacity={0.7}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setShowModelSelectorModal(true);
+                setShowModelModal(true);
               }}
             >
-              <View style={styles.modelDropdownContent}>
-                <Ionicons 
-                  name={selectedAIModel === 'text-to-video' ? 'text' : 'image'} 
-                  size={20} 
-                  color={COLORS.text.primary} 
-                />
-                <Text style={styles.modelDropdownText}>
-                  {selectedAIModel === 'text-to-video' ? 'Text to Video' : 'Image to Video'}
-                </Text>
-              </View>
-              <Ionicons name="chevron-down" size={20} color={COLORS.text.secondary} />
+              <Ionicons name="cube-outline" size={20} color="#FFF" />
+              <Text style={styles.configOptionText}>{selectedModel.displayName}</Text>
+              <Ionicons name="chevron-down" size={20} color="#FFF" />
             </TouchableOpacity>
+
+            {/* Other options - Up to 4 per row */}
+            <View style={styles.configOptionsRow}>
+              {/* Aspect Ratio Selector */}
+              <TouchableOpacity 
+                style={styles.configOptionSmall} 
+                activeOpacity={0.7}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowAspectRatioModal(true);
+                }}
+              >
+                <Ionicons name={getAspectRatioIcon(selectedAspectRatio)} size={20} color="#FFF" />
+                <Text style={styles.configOptionTextSmall}>{selectedAspectRatio}</Text>
+              </TouchableOpacity>
+
+              {/* Duration Selector */}
+              <TouchableOpacity 
+                style={styles.configOptionSmall} 
+                activeOpacity={0.7}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowDurationModal(true);
+                }}
+              >
+                <Ionicons name="time-outline" size={20} color="#FFF" />
+                <Text style={styles.configOptionTextSmall}>{selectedDuration}s</Text>
+              </TouchableOpacity>
+
+              {/* Quality Selector - Only show for models with resolution options */}
+              {selectedModel.resolutions.length > 0 && (
+                <TouchableOpacity 
+                  style={styles.configOptionSmall} 
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowQualityModal(true);
+                  }}
+                >
+                  <Ionicons name="settings-outline" size={20} color="#FFF" />
+                  <Text style={styles.configOptionTextSmall}>{selectedQuality}</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Audio Selector */}
+              <TouchableOpacity 
+                style={styles.configOptionSmall} 
+                activeOpacity={0.7}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setAudioEnabled(!audioEnabled);
+                }}
+              >
+                <Ionicons name={audioEnabled ? "volume-high" : "volume-mute"} size={20} color="#FFF" />
+                <Text style={styles.configOptionTextSmall}>Audio</Text>
+              </TouchableOpacity>
             </View>
+          </View>
 
           {/* Create Button */}
             <TouchableOpacity 
               style={[
               styles.createButtonWrapper,
-              ((selectedAIModel === 'image-to-video' && !imageUri) || !description.trim() || isLoading) && styles.createButtonDisabled
+              ((selectedAIModel === 'image-to-video' && !imageUri) || (selectedAIModel === 'text-to-video' && !description.trim()) || isLoading) && styles.createButtonDisabled
               ]} 
               onPress={handleGenerate}
-            disabled={(selectedAIModel === 'image-to-video' && !imageUri) || !description.trim() || isLoading}
+            disabled={(selectedAIModel === 'image-to-video' && !imageUri) || (selectedAIModel === 'text-to-video' && !description.trim()) || isLoading}
               activeOpacity={0.8}
             >
               <LinearGradient
@@ -879,11 +1096,362 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
                   <Text style={styles.createButtonText}>Creating...</Text>
                   </View>
                 ) : (
-                <Text style={styles.createButtonText}>Create</Text>
+                  <View style={styles.buttonContentContainer}>
+                    <Text style={styles.createButtonText}>Create Video</Text>
+                    <View style={styles.buttonCostBadge}>
+                      <Text style={styles.buttonCostText}>{getVideoCreditCost()}</Text>
+                      <Ionicons name="flash" size={12} color="#FFF" />
+                    </View>
+                  </View>
                 )}
               </LinearGradient>
             </TouchableOpacity>
+
+            {/* Cancel Button - Only visible during loading */}
+            {isLoading && (
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCancelGeneration}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close-circle-outline" size={20} color={COLORS.text.secondary} />
+                <Text style={styles.cancelButtonText}>Cancel Generation</Text>
+              </TouchableOpacity>
+            )}
         </ScrollView>
+
+        {/* Model Selector Modal */}
+        <Modal
+          visible={showModelModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowModelModal(false)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowModelModal(false)}
+          >
+            <TouchableOpacity 
+              activeOpacity={1}
+              style={styles.modalContent}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.modalHandle} />
+              <Text style={styles.modalTitle}>Select Model</Text>
+              <Text style={styles.modalSubtitle}>Choose the AI model for your video</Text>
+              
+              <ScrollView 
+                style={styles.modelsList}
+                showsVerticalScrollIndicator={false}
+              >
+                {getModelsByProviderGrouped().map((provider) => {
+                  const isExpanded = expandedProviders.has(provider.id);
+                  
+                  return (
+                    <View key={provider.id} style={styles.providerGroup}>
+                      {/* Provider Header - Clickable to expand/collapse */}
+                      <TouchableOpacity
+                        style={styles.providerHeader}
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          toggleProvider(provider.id);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name={provider.icon as any} size={20} color={COLORS.text.primary} />
+                        <View style={styles.providerHeaderText}>
+                          <Text style={styles.providerName}>{provider.displayName}</Text>
+                          <Text style={styles.providerDescription}>{provider.description}</Text>
+                        </View>
+                        <Ionicons 
+                          name={isExpanded ? "chevron-up" : "chevron-down"} 
+                          size={20} 
+                          color={COLORS.text.secondary} 
+                        />
+                      </TouchableOpacity>
+                      
+                      {/* Provider Models - Only show when expanded */}
+                      {isExpanded && (
+                        <View style={styles.providerModels}>
+                          {provider.models.map((model) => {
+                            const isDisabled = model.isComingSoon;
+                            
+                            return (
+                              <TouchableOpacity
+                                key={model.id}
+                                style={[
+                                  styles.modelOption,
+                                  selectedModel.id === model.id && styles.modelOptionActive,
+                                  isDisabled && styles.modelOptionDisabled
+                                ]}
+                                onPress={() => {
+                                  if (isDisabled) return;
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  setSelectedModel(model);
+                                  setShowModelModal(false);
+                                }}
+                                activeOpacity={isDisabled ? 1 : 0.7}
+                                disabled={isDisabled}
+                              >
+                                <View style={styles.modelOptionContent}>
+                                  <View style={styles.modelOptionHeader}>
+                                    <Text style={[
+                                      styles.modelOptionText,
+                                      selectedModel.id === model.id && styles.modelOptionTextActive,
+                                      isDisabled && styles.modelOptionTextDisabled
+                                    ]}>
+                                      {model.displayName}
+                                    </Text>
+                                    {model.isPremium && !isDisabled && (
+                                      <View style={styles.premiumBadge}>
+                                        <Text style={styles.premiumBadgeText}>Premium</Text>
+                                      </View>
+                                    )}
+                                    {isDisabled && (
+                                      <View style={styles.comingSoonBadge}>
+                                        <Text style={styles.comingSoonBadgeText}>Coming Soon</Text>
+                                      </View>
+                                    )}
+                                  </View>
+                                  <Text style={[
+                                    styles.modelOptionDescription,
+                                    isDisabled && styles.modelOptionDescriptionDisabled
+                                  ]}>
+                                    {model.description}
+                                  </Text>
+                                  {!isDisabled && (
+                                    <View style={styles.modelTags}>
+                                      {model.tags?.map((tag) => (
+                                        <View key={tag} style={styles.modelTag}>
+                                          <Ionicons name="flash" size={12} color={COLORS.text.secondary} />
+                                          <Text style={styles.modelTagText}>{tag}</Text>
+                                        </View>
+                                      ))}
+                                      {model.resolutions.length > 0 && (
+                                        <View style={styles.modelTag}>
+                                          <Ionicons name="videocam" size={12} color={COLORS.text.secondary} />
+                                          <Text style={styles.modelTagText}>{model.resolutions.join('-')}</Text>
+                                        </View>
+                                      )}
+                                      {model.maxDuration && (
+                                        <View style={styles.modelTag}>
+                                          <Ionicons name="time" size={12} color={COLORS.text.secondary} />
+                                          <Text style={styles.modelTagText}>{model.maxDuration}s</Text>
+                                        </View>
+                                      )}
+                                    </View>
+                                  )}
+                                </View>
+                                {selectedModel.id === model.id && !isDisabled && (
+                                  <Ionicons name="checkmark-circle" size={24} color={COLORS.primary.cyan} />
+                                )}
+                                {isDisabled && (
+                                  <Ionicons name="lock-closed" size={20} color={COLORS.text.secondary} />
+                                )}
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* Aspect Ratio Modal */}
+        <Modal
+          visible={showAspectRatioModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowAspectRatioModal(false)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowAspectRatioModal(false)}
+          >
+            <TouchableOpacity 
+              activeOpacity={1}
+              style={styles.modalContent}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.modalHandle} />
+              <Text style={styles.modalTitle}>Aspect Ratio</Text>
+              <Text style={styles.modalSubtitle}>Choose your video format</Text>
+              
+              {selectedModel.aspectRatios.map((ratio) => {
+                return (
+                  <TouchableOpacity
+                    key={ratio}
+                    style={[
+                      styles.modalSelectOption,
+                      selectedAspectRatio === ratio && styles.modalSelectOptionActive
+                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      console.log('📐 [EditScreen] Aspect ratio selected:', ratio);
+                      setSelectedAspectRatio(ratio);
+                      setShowAspectRatioModal(false);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.modalSelectWithIcon}>
+                      <Ionicons name={getAspectRatioIcon(ratio)} size={24} color={COLORS.text.primary} />
+                      <Text style={[
+                        styles.modalSelectText,
+                        selectedAspectRatio === ratio && styles.modalSelectTextActive
+                      ]}>
+                        {ratio}
+                      </Text>
+                    </View>
+                    {selectedAspectRatio === ratio && (
+                      <Ionicons name="checkmark-circle" size={24} color={COLORS.primary.cyan} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* Duration Modal */}
+        <Modal
+          visible={showDurationModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowDurationModal(false)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowDurationModal(false)}
+          >
+            <TouchableOpacity 
+              activeOpacity={1}
+              style={styles.modalContent}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.modalHandle} />
+              <Text style={styles.modalTitle}>Duration</Text>
+              <Text style={styles.modalSubtitle}>
+                {selectedModel.provider === 'kling' 
+                  ? 'Select video length (5s or 10s)' 
+                  : selectedModel.id === 'veo-3.1-generate-preview'
+                    ? 'Select video length (4s, 6s, or 8s)'
+                    : `Select video length (max ${selectedModel.maxDuration}s)`}
+              </Text>
+              
+              {getValidDurations().map((duration) => {
+                return (
+                  <TouchableOpacity
+                    key={duration}
+                    style={[
+                      styles.modalSelectOption,
+                      selectedDuration === duration && styles.modalSelectOptionActive
+                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setSelectedDuration(duration);
+                      setShowDurationModal(false);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[
+                      styles.modalSelectText,
+                      selectedDuration === duration && styles.modalSelectTextActive
+                    ]}>
+                      {duration} second{duration > 1 ? 's' : ''}
+                    </Text>
+                    {selectedDuration === duration && (
+                      <Ionicons name="checkmark-circle" size={24} color={COLORS.primary.cyan} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* Quality Modal */}
+        <Modal
+          visible={showQualityModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowQualityModal(false)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowQualityModal(false)}
+          >
+            <TouchableOpacity 
+              activeOpacity={1}
+              style={styles.modalContent}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.modalHandle} />
+              <Text style={styles.modalTitle}>Quality</Text>
+              <Text style={styles.modalSubtitle}>
+                {selectedModel.id === 'veo-3.1-fast-generate-preview' && selectedAspectRatio !== '16:9'
+                  ? '1080p only available for 16:9'
+                  : selectedModel.id === 'veo-3.1-generate-preview' && selectedDuration !== 8
+                    ? '1080p only available for 8s'
+                    : 'Choose video resolution'}
+              </Text>
+              
+              {selectedModel.resolutions.map((quality) => {
+                // Check if 1080p is disabled
+                const is1080pDisabled = quality === '1080p' && (
+                  (selectedModel.id === 'veo-3.1-fast-generate-preview' && selectedAspectRatio !== '16:9') ||
+                  (selectedModel.id === 'veo-3.1-generate-preview' && selectedDuration !== 8)
+                );
+                
+                return (
+                  <TouchableOpacity
+                    key={quality}
+                    style={[
+                      styles.modalSelectOption,
+                      selectedQuality === quality && styles.modalSelectOptionActive,
+                      is1080pDisabled && styles.modalSelectOptionDisabled
+                    ]}
+                    onPress={() => {
+                      if (is1080pDisabled) return;
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setSelectedQuality(quality as '720p' | '1080p');
+                      setShowQualityModal(false);
+                    }}
+                    activeOpacity={is1080pDisabled ? 1 : 0.7}
+                    disabled={is1080pDisabled}
+                  >
+                    <View style={styles.modalSelectContent}>
+                      <Text style={[
+                        styles.modalSelectText,
+                        selectedQuality === quality && styles.modalSelectTextActive,
+                        is1080pDisabled && styles.modalSelectTextDisabled
+                      ]}>
+                        {quality}
+                      </Text>
+                      {is1080pDisabled && (
+                        <Text style={styles.modalSelectSubtext}>
+                          {selectedModel.id === 'veo-3.1-fast-generate-preview' 
+                            ? 'Only for 16:9' 
+                            : 'Only for 8s'}
+                        </Text>
+                      )}
+                    </View>
+                    {selectedQuality === quality && !is1080pDisabled && (
+                      <Ionicons name="checkmark-circle" size={24} color={COLORS.primary.cyan} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
 
         {/* Image Picker Modal */}
         <Modal
@@ -950,95 +1518,6 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
             </TouchableOpacity>
           </TouchableOpacity>
         </Modal>
-
-        {/* Model Selector Modal */}
-        <Modal
-          visible={showModelSelectorModal}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setShowModelSelectorModal(false)}
-        >
-          <TouchableOpacity 
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setShowModelSelectorModal(false)}
-          >
-            <TouchableOpacity 
-              activeOpacity={1}
-              style={styles.modalContent}
-              onPress={(e) => e.stopPropagation()}
-            >
-              <View style={styles.modalHandle} />
-              <Text style={styles.modalTitle}>Select AI Model</Text>
-              <Text style={styles.modalSubtitle}>Choose the model type for your video</Text>
-              
-              <TouchableOpacity 
-                style={[
-                  styles.modelModalOption,
-                  selectedAIModel === 'text-to-video' && styles.modelModalOptionSelected
-                ]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedAIModel('text-to-video');
-                  if (imageUri) {
-                    setImageUri(null);
-                  }
-                  setShowModelSelectorModal(false);
-                }}
-                activeOpacity={0.7}
-              >
-                <View style={styles.modelModalIconContainer}>
-                  <Ionicons name="text" size={24} color={selectedAIModel === 'text-to-video' ? COLORS.primary.violet : COLORS.text.secondary} />
-                </View>
-                <View style={styles.modelModalContent}>
-                  <Text style={[
-                    styles.modelModalText,
-                    selectedAIModel === 'text-to-video' && styles.modelModalTextSelected
-                  ]}>
-                    Text to Video
-                  </Text>
-                  <Text style={styles.modelModalDescription}>
-                    Generate videos from text descriptions
-                  </Text>
-                </View>
-                {selectedAIModel === 'text-to-video' && (
-                  <Ionicons name="checkmark-circle" size={24} color={COLORS.primary.cyan} />
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[
-                  styles.modelModalOption,
-                  selectedAIModel === 'image-to-video' && styles.modelModalOptionSelected
-                ]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedAIModel('image-to-video');
-                  setShowModelSelectorModal(false);
-                }}
-                activeOpacity={0.7}
-              >
-                <View style={styles.modelModalIconContainer}>
-                  <Ionicons name="image" size={24} color={selectedAIModel === 'image-to-video' ? COLORS.primary.violet : COLORS.text.secondary} />
-                </View>
-                <View style={styles.modelModalContent}>
-                  <Text style={[
-                    styles.modelModalText,
-                    selectedAIModel === 'image-to-video' && styles.modelModalTextSelected
-                  ]}>
-                    Image to Video
-                  </Text>
-                  <Text style={styles.modelModalDescription}>
-                    Transform images into animated videos
-                  </Text>
-                </View>
-                {selectedAIModel === 'image-to-video' && (
-                  <Ionicons name="checkmark-circle" size={24} color={COLORS.primary.cyan} />
-                )}
-              </TouchableOpacity>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Modal>
       </KeyboardAvoidingView>
     </View>
   );
@@ -1084,28 +1563,34 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
   },
-  // Prompt Section
-  promptSection: {
+  // Tab Container
+  tabContainer: {
+    flexDirection: 'row',
     paddingHorizontal: 20,
     paddingTop: 24,
+    gap: 12,
   },
-  sectionLabel: {
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: 'transparent',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabActive: {
+    borderBottomColor: COLORS.text.primary,
+  },
+  tabText: {
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.text.secondary,
-    marginBottom: 12,
   },
-  promptInput: {
-    backgroundColor: COLORS.surface.secondary,
-    borderRadius: 16,
-    padding: 16,
-    fontSize: 16,
+  tabTextActive: {
     color: COLORS.text.primary,
-    minHeight: 150,
-    maxHeight: 250,
-    borderWidth: 1,
-    borderColor: COLORS.ui.border,
-    textAlignVertical: 'top',
   },
   // Image Upload Section
   imageUploadSection: {
@@ -1113,40 +1598,25 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   imageUploadButton: {
+    width: 104,
+    height: 104,
     backgroundColor: COLORS.surface.secondary,
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: COLORS.ui.border,
-    padding: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
   imageUploadIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: COLORS.opacity.violet20,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  imageUploadText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text.primary,
-    marginBottom: 4,
-  },
-  imageUploadSubtext: {
-    fontSize: 13,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
+    justifyContent: 'center',
   },
   imagePreviewContainer: {
     position: 'relative',
-    width: '100%',
-    height: 200,
-    borderRadius: 16,
+    width: 104,
+    height: 104,
+    borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: COLORS.surface.secondary,
   },
@@ -1156,41 +1626,73 @@ const styles = StyleSheet.create({
   },
   changeImageIconButton: {
     position: 'absolute',
-    bottom: 12,
-    right: 12,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    bottom: 8,
+    right: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Model Section
-  modelSection: {
+  // Prompt Section
+  promptSection: {
     paddingHorizontal: 20,
     paddingTop: 24,
   },
-  modelDropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
+  promptInput: {
     backgroundColor: COLORS.surface.secondary,
-    borderRadius: 12,
+    borderRadius: 16,
+    padding: 16,
+    fontSize: 16,
+    color: COLORS.text.primary,
+    minHeight: 120,
+    maxHeight: 200,
     borderWidth: 1,
     borderColor: COLORS.ui.border,
+    textAlignVertical: 'top',
   },
-  modelDropdownContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  // Configuration Section
+  configSection: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
     gap: 12,
   },
-  modelDropdownText: {
+  configOptionFull: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface.secondary,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 12,
+  },
+  configOptionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  configOptionSmall: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surface.secondary,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    gap: 4,
+  },
+  configOptionText: {
+    flex: 1,
     fontSize: 15,
     fontWeight: '600',
     color: COLORS.text.primary,
   },
-  // Style Section - REMOVED
+  configOptionTextSmall: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+  },
   // Create Button
   createButtonWrapper: {
     marginHorizontal: 20,
@@ -1213,9 +1715,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     elevation: 0,
   },
+  buttonContentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   createButtonText: {
     color: '#FFF',
     fontSize: 18,
+    fontWeight: '700',
+  },
+  buttonCostBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  buttonCostText: {
+    color: '#FFF',
+    fontSize: 14,
     fontWeight: '700',
   },
   buttonLoadingContainer: {
@@ -1290,6 +1811,203 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: 'rgba(255, 255, 255, 0.8)',
   },
+  // Model Selector Hierarchical Styles
+  modelsList: {
+    maxHeight: 500,
+  },
+  providerGroup: {
+    marginBottom: 24,
+  },
+  providerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.surface.secondary,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  providerHeaderText: {
+    flex: 1,
+  },
+  providerName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text.primary,
+    marginBottom: 2,
+  },
+  providerDescription: {
+    fontSize: 13,
+    color: COLORS.text.secondary,
+  },
+  providerModels: {
+    paddingLeft: 8,
+  },
+  modelOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    paddingLeft: 28,
+    backgroundColor: COLORS.surface.secondary,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  modelOptionActive: {
+    borderColor: COLORS.primary.violet,
+    backgroundColor: COLORS.opacity.violet20,
+  },
+  modelOptionDisabled: {
+    opacity: 0.5,
+    backgroundColor: COLORS.surface.elevated,
+  },
+  modelOptionContent: {
+    flex: 1,
+  },
+  modelOptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  modelOptionText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+  },
+  modelOptionTextActive: {
+    color: COLORS.primary.violet,
+  },
+  modelOptionTextDisabled: {
+    color: COLORS.text.secondary,
+  },
+  modelOptionDescription: {
+    fontSize: 13,
+    color: COLORS.text.secondary,
+    marginBottom: 8,
+  },
+  modelOptionDescriptionDisabled: {
+    color: COLORS.text.secondary,
+  },
+  premiumBadge: {
+    backgroundColor: COLORS.special.gold,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  premiumBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.text.black,
+  },
+  comingSoonBadge: {
+    backgroundColor: COLORS.opacity.white20,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  comingSoonBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.text.secondary,
+  },
+  modelTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  modelTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: COLORS.opacity.white10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  modelTagText: {
+    fontSize: 11,
+    color: COLORS.text.secondary,
+    fontWeight: '500',
+  },
+  // Selection Modal Styles
+  modalSelectOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: COLORS.surface.secondary,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  modalSelectOptionActive: {
+    borderColor: COLORS.primary.violet,
+    backgroundColor: COLORS.opacity.violet20,
+  },
+  modalSelectOptionDisabled: {
+    opacity: 0.5,
+    backgroundColor: COLORS.surface.elevated,
+  },
+  modalSelectContent: {
+    flex: 1,
+  },
+  modalSelectText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+  },
+  modalSelectTextActive: {
+    color: COLORS.primary.violet,
+  },
+  modalSelectTextDisabled: {
+    color: COLORS.text.secondary,
+  },
+  modalSelectSubtext: {
+    fontSize: 13,
+    color: COLORS.text.secondary,
+    marginTop: 2,
+  },
+  modalSelectWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  // Aspect Ratio Icons
+  aspectRatioIconLandscape: {
+    width: 28,
+    height: 20,
+    borderRadius: 4,
+    backgroundColor: COLORS.opacity.white10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  aspectRatioIconSquare: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    backgroundColor: COLORS.opacity.white10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  aspectRatioIconPortrait: {
+    width: 20,
+    height: 28,
+    borderRadius: 4,
+    backgroundColor: COLORS.opacity.white10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  aspectRatioIconInner: {
+    width: '70%',
+    height: '70%',
+    borderRadius: 2,
+    backgroundColor: COLORS.text.primary,
+  },
   // Model Selector Modal styles
   modelModalOption: {
     flexDirection: 'row',
@@ -1330,7 +2048,48 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.text.secondary,
   },
-  // Loading Overlay styles
+  // Unused styles kept for compatibility
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text.secondary,
+    marginBottom: 12,
+  },
+  imageUploadText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+    marginBottom: 4,
+  },
+  imageUploadSubtext: {
+    fontSize: 13,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+  },
+  modelSection: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  modelDropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: COLORS.surface.secondary,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.ui.border,
+  },
+  modelDropdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  modelDropdownText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+  },
   loadingOverlay: {
     position: 'absolute',
     top: 0,
@@ -1410,7 +2169,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
   },
-  // AI Model Selector Styles
   aiModelSection: {
     paddingHorizontal: 20,
     paddingVertical: 20,
@@ -1450,7 +2208,6 @@ const styles = StyleSheet.create({
   aiModelButtonTextSelected: {
     color: '#FFF',
   },
-  // Text to Video Placeholder Styles
   textToVideoPlaceholder: {
     flex: 1,
     justifyContent: 'center',
@@ -1482,7 +2239,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  // Text to Video Header (above input)
   textToVideoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1517,6 +2273,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.text.secondary,
     lineHeight: 18,
+  },
+  cancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 20,
+    backgroundColor: COLORS.surface.secondary,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.ui.border,
+  },
+  cancelButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text.secondary,
   },
 });
 

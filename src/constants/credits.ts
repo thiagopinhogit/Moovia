@@ -4,23 +4,24 @@
  */
 
 // Credit costs per model (must match backend)
+// Formula: API Cost / 0.005 (cost per credit) = Credits needed
+// With 80% margin: $9.99 plan → $2 max cost → $0.005 per credit
 export const CREDIT_COSTS = {
-  'gemini-pro': 50,
-  'gemini-flash': 20,
+  'gemini-pro': 2,    // ~$0.01 API cost → 2 credits (80% margin)
+  'gemini-flash': 1,  // ~$0.005 API cost → 1 credit (80% margin)
 } as const;
 
 // Credits granted per subscription tier (must match backend)
 export const SUBSCRIPTION_CREDITS = {
-  'lumoproweekly': 400,
-  'lumopromonthly': 800,
-  'lumoproannual': 1600,
+  'mooviaproweekly': 400,
+  'mooviaproannual': 1600,
 } as const;
 
 // One-time purchase credit packages (must match backend)
 export const PURCHASE_CREDITS = {
-  'credits_1000': 1000,
-  'credits_5000': 5000,
-  'credits_10000': 10000,
+  'moovia_credits_1000': 1000,
+  'moovia_credits_5000': 5000,
+  'moovia_credits_10000': 10000,
 } as const;
 
 // Calculate how many images you can generate with credits

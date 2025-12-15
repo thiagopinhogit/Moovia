@@ -8,13 +8,16 @@
     "deploy": "npm run build && zip -r function.zip dist node_modules package.json",
     "dev": "nodemon",
     "dev:direct": "ts-node src/server.ts",
+    "ngrok": "ngrok http 3000",
     "test": "jest"
   },
   "dependencies": {
+    "@google/genai": "^1.33.0",
     "@types/aws-lambda": "^8.10.130",
     "axios": "^1.6.2",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
+    "google-auth-library": "^9.15.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.0.3",
     "node-fetch": "^2.7.0"

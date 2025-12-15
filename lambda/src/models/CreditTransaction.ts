@@ -26,11 +26,11 @@ export interface ICreditTransaction extends Document {
   // Metadata based on transaction type
   metadata: {
     // For subscription_grant
-    subscriptionTier?: string; // lumoproweekly, lumopromonthly, lumoproannual
+    subscriptionTier?: string; // mooviaproweekly, mooviaproannual
     revenueCatTransactionId?: string;
     
     // For one_time_purchase
-    productId?: string; // credits_1000, credits_5000, credits_10000
+    productId?: string; // moovia_credits_1000, moovia_credits_5000, moovia_credits_10000
     purchaseToken?: string;
     
     // For image_generation and video_generation
