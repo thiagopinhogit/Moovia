@@ -9,6 +9,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import COLORS from '../constants/colors';
 
 type BadgeText = {
   before: string;

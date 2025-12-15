@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Image,
   Alert,
   Dimensions,
 } from 'react-native';
@@ -15,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../types';
 import { getHistory, deleteHistoryItem, clearHistory, HistoryItem } from '../services/history';
+import MyMovieCard from '../components/MyMovieCard';
 import COLORS from '../constants/colors';
 
 type HistoryScreenProps = {
@@ -46,7 +46,12 @@ export default function HistoryScreen({ navigation }: HistoryScreenProps) {
   };
 
   const handleItemPress = (item: HistoryItem) => {
-    navigation.navigate('Edit', { imageUri: item.imageUri });
+    if (item.status === 'completed' && item.imageUri) {
+      navigation.navigate('VideoPlayer', {
+        videoUrl: item.imageUri,
+        description: item.description,
+      });
+    }
   };
 
   const handleDeleteItem = (id: string) => {
@@ -101,27 +106,34 @@ export default function HistoryScreen({ navigation }: HistoryScreenProps) {
   };
 
   const renderItem = ({ item, index }: { item: HistoryItem; index: number }) => (
-    <TouchableOpacity
+    <View
       style={[
         styles.item,
         { marginLeft: index % 2 === 0 ? SPACING : SPACING / 2 },
         { marginRight: index % 2 === 0 ? SPACING / 2 : SPACING },
       ]}
-      onPress={() => handleItemPress(item)}
-      onLongPress={() => handleDeleteItem(item.id)}
     >
-      <Image
-        source={{ uri: item.imageUri }}
-        style={styles.itemImage}
-        resizeMode="cover"
-      />
+      <TouchableOpacity
+        onLongPress={() => handleDeleteItem(item.id)}
+        activeOpacity={1}
+      >
+        <MyMovieCard
+          taskId={item.taskId}
+          videoUri={item.imageUri}
+          description={item.description}
+          status={item.status || 'completed'}
+          width={ITEM_WIDTH}
+          height={ITEM_WIDTH * 1.3}
+          onPress={() => handleItemPress(item)}
+        />
+      </TouchableOpacity>
       <View style={styles.itemInfo}>
         <Text style={styles.itemDescription} numberOfLines={2}>
           {item.description}
         </Text>
         <Text style={styles.itemDate}>{formatDate(item.createdAt)}</Text>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 
   return (
@@ -240,12 +252,6 @@ const styles = StyleSheet.create({
   item: {
     width: ITEM_WIDTH,
     marginBottom: 20,
-  },
-  itemImage: {
-    width: ITEM_WIDTH,
-    height: ITEM_WIDTH * 1.3,
-    borderRadius: 16,
-    backgroundColor: COLORS.surface.primary,
   },
   itemInfo: {
     marginTop: 8,

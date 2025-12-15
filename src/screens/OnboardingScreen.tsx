@@ -19,13 +19,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../types';
-import BeforeAfterCard from '../components/BeforeAfterCard';
+import VideoCard from '../components/VideoCard';
 import { useSubscription } from '../context/SubscriptionContext';
 import COLORS from '../constants/colors';
 
 const { width, height } = Dimensions.get('window');
 const CAROUSEL_CARD_WIDTH = width * 0.36;
 const CAROUSEL_GAP = 14;
+const SAMPLE_VIDEO = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
 
 type OnboardingScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
@@ -80,44 +81,44 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
     () => [
       {
         id: 'c1',
-        beforeImage: require('../../assets/images/categories/ai-boyfriend/before.jpg'),
-        afterImage: require('../../assets/images/categories/ai-boyfriend/after.jpg'),
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/ai-boyfriend/after.jpg'),
         label: 'AI Boyfriend',
       },
       {
         id: 'c2',
-        beforeImage: require('../../assets/images/categories/tattoo-try-on/before.jpg'),
-        afterImage: require('../../assets/images/categories/tattoo-try-on/after.jpg'),
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/tattoo-try-on/after.jpg'),
         label: 'Tattoo Try-On',
       },
       {
         id: 'c3',
-        beforeImage: require('../../assets/images/categories/fat-pet/before.jpg'),
-        afterImage: require('../../assets/images/categories/fat-pet/after.jpg'),
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/fat-pet/after.jpg'),
         label: 'Fat Pet',
       },
       {
         id: 'c4',
-        beforeImage: require('../../assets/images/categories/hairstyle-change/before.jpg'),
-        afterImage: require('../../assets/images/categories/hairstyle-change/after.jpg'),
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/hairstyle-change/after.jpg'),
         label: 'Hairstyle Change',
       },
       {
         id: 'c5',
-        beforeImage: require('../../assets/images/categories/plumber/before.jpg'),
-        afterImage: require('../../assets/images/categories/plumber/after.jpg'),
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/plumber/after.jpg'),
         label: 'Plumber',
       },
       {
         id: 'c6',
-        beforeImage: require('../../assets/images/categories/homeless/before.jpg'),
-        afterImage: require('../../assets/images/categories/homeless/after.jpg'),
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/homeless/after.jpg'),
         label: 'Homeless',
       },
       {
         id: 'c7',
-        beforeImage: require('../../assets/images/categories/crashed-car/before.jpg'),
-        afterImage: require('../../assets/images/categories/crashed-car/after.jpg'),
+        video: SAMPLE_VIDEO,
+        poster: require('../../assets/images/categories/crashed-car/after.jpg'),
         label: 'Crashed Car',
       },
     ],
@@ -262,17 +263,15 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
                 >
                   {[...carouselItems, ...carouselItems].map((item, idx) => {
                     return (
-                      <BeforeAfterCard
-                        key={`${item.id}-${idx}`}
-                        beforeUri={item.beforeImage}
-                        afterUri={item.afterImage}
-                        label={item.label}
-                        width={CAROUSEL_CARD_WIDTH}
-                        height={CAROUSEL_CARD_WIDTH * 1.78}
-                        style={{ marginRight: CAROUSEL_GAP }}
-                        badgeText={{ before: t('home.before'), after: t('home.after') }}
-                        hideLabel
-                      />
+                      <View key={`${item.id}-${idx}`} style={{ marginRight: CAROUSEL_GAP }}>
+                        <VideoCard
+                          videoUri={item.video}
+                          poster={item.poster}
+                          title={item.label}
+                          width={CAROUSEL_CARD_WIDTH}
+                          height={CAROUSEL_CARD_WIDTH * 1.78}
+                        />
+                      </View>
                     );
                   })}
                 </Animated.View>
@@ -296,10 +295,15 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
                 onPress={handleNext}
                 activeOpacity={0.9}
               >
-                <View style={styles.getStartedButton}>
+                <LinearGradient
+                  colors={['#5B3F9E', '#3D2B7A', '#2A1A5E']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.getStartedButton}
+                >
                   <Text style={styles.getStartedButtonText}>{t('onboarding.welcome.button')}</Text>
-                  <Ionicons name="arrow-forward" size={20} color={COLORS.background.primary} />
-                </View>
+                  <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                </LinearGradient>
               </TouchableOpacity>
 
               {/* Footer Text */}
@@ -343,7 +347,7 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
           <SafeAreaView edges={['top']} style={styles.tutorialHeader}>
             {tutorialIndex > 0 || currentIndex > 0 ? (
               <TouchableOpacity onPress={handleBack} style={styles.navButton}>
-                <Ionicons name="arrow-back" size={24} color="#FFF" />
+                <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
               </TouchableOpacity>
             ) : (
               <View style={styles.navButton} />
@@ -364,7 +368,7 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
 
             {!isLastSlide && (
               <TouchableOpacity onPress={handleNext} style={styles.navButton}>
-                <Ionicons name="arrow-forward" size={24} color="#FFF" />
+                <Ionicons name="arrow-forward" size={24} color={COLORS.text.primary} />
               </TouchableOpacity>
             )}
             {isLastSlide && <View style={styles.navButton} />}
@@ -441,12 +445,17 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
               onPress={handleNext}
               activeOpacity={0.9}
             >
-              <View style={styles.nextButton}>
+              <LinearGradient
+                colors={['#5B3F9E', '#3D2B7A', '#2A1A5E']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.nextButton}
+              >
                 <Text style={styles.nextButtonText}>
                   {isLastSlide ? t('onboarding.tutorial.finish') : t('onboarding.tutorial.next')}
                 </Text>
-                <Ionicons name="arrow-forward" size={20} color="#5B3F9E" />
-              </View>
+                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+              </LinearGradient>
             </TouchableOpacity>
           </SafeAreaView>
         </LinearGradient>
@@ -512,7 +521,7 @@ const styles = StyleSheet.create({
     fontSize: 38,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#FFFFFF',
+    color: COLORS.text.primary,
     paddingHorizontal: 28,
     marginTop: 44,
     marginBottom: 16,
@@ -528,25 +537,25 @@ const styles = StyleSheet.create({
   getStartedButtonWrapper: {
     paddingHorizontal: 0,
     marginBottom: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#663CFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   getStartedButton: {
-    backgroundColor: '#FFFFFF',
     paddingVertical: 18,
-    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
   },
   getStartedButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: COLORS.text.primary,
+    color: '#FFFFFF',
     letterSpacing: 0.3,
   },
   footerContainer: {
@@ -555,7 +564,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: COLORS.text.secondary,
     textAlign: 'center',
   },
   footerLinks: {
@@ -565,7 +574,7 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: COLORS.brand.cyan,
     textDecorationLine: 'underline',
   },
   carouselContainer: {
@@ -597,7 +606,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: COLORS.surface.secondary,
   },
   dotsContainer: {
     flexDirection: 'row',
@@ -609,11 +618,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   dotActive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.brand.cyan,
     width: 24,
   },
   dotInactive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: COLORS.opacity.white30,
   },
   tutorialImageContainer: {
     flex: 1,
@@ -627,44 +636,46 @@ const styles = StyleSheet.create({
     height: '100%',
     maxHeight: height * 0.5,
     borderRadius: 20,
-    backgroundColor: '#3D2B7A',
-    shadowColor: '#000',
+    backgroundColor: COLORS.surface.secondary,
+    shadowColor: COLORS.brand.violet,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.5,
     shadowRadius: 16,
     elevation: 12,
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 2,
+    borderColor: COLORS.opacity.violet20,
   },
   textBubble: {
     position: 'absolute',
     bottom: 40,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface.elevated,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 16,
-    shadowColor: '#000',
+    shadowColor: COLORS.brand.cyan,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,
     maxWidth: width * 0.7,
+    borderWidth: 1,
+    borderColor: COLORS.opacity.cyan20,
   },
   textBubbleText: {
     fontSize: 15,
-    color: '#2A1A5E',
+    color: COLORS.text.primary,
     textAlign: 'center',
     fontWeight: '600',
   },
   cursor: {
-    color: '#2A1A5E',
+    color: COLORS.brand.cyan,
     fontWeight: '600',
   },
   tutorialTitle: {
     fontSize: 32,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#FFFFFF',
+    color: COLORS.text.primary,
     paddingHorizontal: 40,
     paddingVertical: 30,
     lineHeight: 38,
@@ -676,25 +687,25 @@ const styles = StyleSheet.create({
   },
   nextButtonWrapper: {
     width: '100%',
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#663CFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   nextButton: {
-    backgroundColor: '#FFFFFF',
     paddingVertical: 18,
-    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
   },
   nextButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#5B3F9E',
+    color: '#FFFFFF',
     letterSpacing: 0.3,
   },
 });

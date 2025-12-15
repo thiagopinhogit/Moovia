@@ -146,14 +146,6 @@ export async function handleRevenueCatWebhook(event: any): Promise<APIGatewayPro
     const productId = payload.event?.product_id;
     const eventId = payload.event?.id;
     
-    // DEBUG: Log exact product ID with type and length
-    console.log('🔍 DEBUG - Product ID Analysis:');
-    console.log('  Raw value:', JSON.stringify(productId));
-    console.log('  Type:', typeof productId);
-    console.log('  Length:', productId?.length);
-    console.log('  Trimmed:', productId?.trim());
-    console.log('  Equals moovia_credits_1000?:', productId === 'moovia_credits_1000');
-    
     // Extract App Store transaction IDs for duplicate detection
     // Use transaction_id (from App Store) as the unique identifier
     const storeTransactionId = payload.event?.transaction_id;

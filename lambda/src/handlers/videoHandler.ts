@@ -285,8 +285,10 @@ export async function handleVideoStatus(event: any, headers: any): Promise<APIGa
   try {
     // Extract taskId from path - handle both simple IDs and paths with slashes
     const path = event.path || event.rawPath || '';
-    // Remove /video-status/ prefix and get everything after it
-    const taskId = path.replace('/video-status/', '');
+    // Remove /video-status/ prefix (and optional /prod/ stage) and get everything after it
+    const taskId = path
+      .replace(/^\/prod\/video-status\//, '')  // Remove /prod/video-status/
+      .replace(/^\/video-status\//, '');        // Or just /video-status/
 
     if (!taskId) {
       return errorResponse(HTTP_STATUS.BAD_REQUEST, 'taskId is required', headers);

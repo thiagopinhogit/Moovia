@@ -780,34 +780,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             </View>
 
             <View style={styles.settingsSection}>
-              <Text style={styles.settingsLabel}>{t('settings.aiModel')}</Text>
-              <TouchableOpacity 
-                style={styles.settingsRow}
-                onPress={() => {
-                  setShowSettingsModal(false);
-                  setShowModelSelectorModal(true);
-                }}
-              >
-                <Ionicons name="hardware-chip-outline" size={20} color={COLORS.ui.white} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.settingsRowText}>{selectedModel.displayName}</Text>
-                  {(() => {
-                    const cost = getModelCreditCost(selectedModel.name);
-                    if (cost) {
-                      return (
-                        <Text style={styles.settingsRowSubtext}>
-                          {cost} credits per image
-                        </Text>
-                      );
-                    }
-                    return null;
-                  })()}
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#999" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.settingsSection}>
               <Text style={styles.settingsLabel}>{t('home.language')}</Text>
                 <TouchableOpacity 
                 style={styles.settingsRow}

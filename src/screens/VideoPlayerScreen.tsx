@@ -1,14 +1,16 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   StatusBar,
   Dimensions,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
@@ -30,10 +32,54 @@ const { width, height } = Dimensions.get('window');
 
 export default function VideoPlayerScreen({ navigation, route }: VideoPlayerScreenProps) {
   const { videoUrl, description } = route.params;
+  const insets = useSafeAreaInsets();
   const videoRef = useRef<Video>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const controlsOpacity = useRef(new Animated.Value(1)).current;
+  const hideControlsTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-hide controls after 3 seconds
+  useEffect(() => {
+    if (showControls && isPlaying) {
+      hideControlsTimeout.current = setTimeout(() => {
+        hideControls();
+      }, 3000);
+    }
+
+    return () => {
+      if (hideControlsTimeout.current) {
+        clearTimeout(hideControlsTimeout.current);
+      }
+    };
+  }, [showControls, isPlaying]);
+
+  const hideControls = () => {
+    Animated.timing(controlsOpacity, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => setShowControls(false));
+  };
+
+  const showControlsHandler = () => {
+    setShowControls(true);
+    Animated.timing(controlsOpacity, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const toggleControls = () => {
+    if (showControls) {
+      hideControls();
+    } else {
+      showControlsHandler();
+    }
+  };
 
   const handlePlayPause = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -45,6 +91,8 @@ export default function VideoPlayerScreen({ navigation, route }: VideoPlayerScre
       }
       setIsPlaying(!isPlaying);
     }
+    // Show controls when toggling play/pause
+    showControlsHandler();
   };
 
   const handleSaveToLibrary = async () => {
@@ -105,6 +153,11 @@ export default function VideoPlayerScreen({ navigation, route }: VideoPlayerScre
         onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
       />
 
+      {/* Tap to toggle controls */}
+      <TouchableWithoutFeedback onPress={toggleControls}>
+        <View style={styles.tapArea} />
+      </TouchableWithoutFeedback>
+
       {/* Loading Indicator */}
       {isLoading && (
         <View style={styles.loadingContainer}>
@@ -112,59 +165,77 @@ export default function VideoPlayerScreen({ navigation, route }: VideoPlayerScre
         </View>
       )}
 
-      {/* Top Gradient Overlay */}
-      <LinearGradient
-        colors={['rgba(0,0,0,0.8)', 'transparent']}
-        style={styles.topGradient}
-      />
-
-      {/* Bottom Gradient Overlay */}
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)']}
-        style={styles.bottomGradient}
-      />
-
-      {/* Top Bar */}
-      <SafeAreaView style={styles.topBar} edges={['top']}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <View style={styles.titleContainer}>
-          <Text style={styles.title} numberOfLines={1}>
-            {description || 'Video'}
-          </Text>
-        </View>
-        <View style={styles.placeholder} />
-      </SafeAreaView>
-
-      {/* Play/Pause Button (Center) */}
-      <TouchableOpacity style={styles.playButton} onPress={handlePlayPause}>
-        <View style={styles.playButtonCircle}>
-          <Ionicons
-            name={isPlaying ? 'pause' : 'play'}
-            size={40}
-            color="#FFFFFF"
+      {/* Animated Controls */}
+      {showControls && (
+        <Animated.View style={[styles.controlsContainer, { opacity: controlsOpacity }]} pointerEvents="box-none">
+          {/* Top Gradient Overlay */}
+          <LinearGradient
+            colors={['rgba(0,0,0,0.8)', 'transparent']}
+            style={styles.topGradient}
+            pointerEvents="none"
           />
-        </View>
-      </TouchableOpacity>
 
-      {/* Bottom Controls */}
-      <SafeAreaView style={styles.bottomBar} edges={['bottom']}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={handleSaveToLibrary}
-          disabled={isSaving}
-        >
-          {isSaving ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Ionicons name="download-outline" size={28} color="#FFFFFF" />
+          {/* Bottom Gradient Overlay */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.8)']}
+            style={styles.bottomGradient}
+            pointerEvents="none"
+          />
+
+          {/* Top Bar */}
+          <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
+            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <View style={styles.titleContainer}>
+              <Text style={styles.title} numberOfLines={1}>
+                {description || 'Video'}
+              </Text>
+            </View>
+            <View style={styles.placeholder} />
+          </View>
+
+          {/* Play/Pause Button (Center) - Only show when paused */}
+          {!isPlaying && (
+            <TouchableOpacity style={styles.playButton} onPress={handlePlayPause}>
+              <View style={styles.playButtonCircle}>
+                <Ionicons
+                  name="play"
+                  size={48}
+                  color="#FFFFFF"
+                  style={{ marginLeft: 4 }}
+                />
+              </View>
+            </TouchableOpacity>
           )}
-          <Text style={styles.actionButtonText}>
-            {isSaving ? 'Saving...' : 'Save'}
-          </Text>
-        </TouchableOpacity>
-      </SafeAreaView>
+
+          {/* Bottom Controls */}
+          <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 20 }]}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handlePlayPause}
+            >
+              <Ionicons 
+                name={isPlaying ? 'pause' : 'play'} 
+                size={28} 
+                color="#FFFFFF" 
+              />
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleSaveToLibrary}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Ionicons name="download-outline" size={28} color="#FFFFFF" />
+              )}
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -178,6 +249,12 @@ const styles = StyleSheet.create({
     width: width,
     height: height,
   },
+  tapArea: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  controlsContainer: {
+    ...StyleSheet.absoluteFillObject,
+  },
   loadingContainer: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
@@ -189,14 +266,14 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 150,
+    height: 200,
   },
   bottomGradient: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 150,
+    height: 200,
   },
   topBar: {
     position: 'absolute',
@@ -206,15 +283,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   titleContainer: {
     flex: 1,
@@ -227,23 +306,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   placeholder: {
-    width: 40,
+    width: 44,
   },
   playButton: {
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transform: [{ translateX: -40 }, { translateY: -40 }],
+    transform: [{ translateX: -50 }, { translateY: -50 }],
   },
   playButtonCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.8)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.9)',
   },
   bottomBar: {
     position: 'absolute',
@@ -252,16 +331,20 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 20,
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    gap: 20,
   },
   actionButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 20,
-    minWidth: 100,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   actionButtonText: {
     fontSize: 12,

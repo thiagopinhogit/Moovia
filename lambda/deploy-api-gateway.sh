@@ -61,23 +61,56 @@ INTEGRATION_ID=$(aws apigatewayv2 create-integration \
 
 echo -e "${GREEN}✅ Integração criada: $INTEGRATION_ID${NC}"
 
-# Cria rota POST /generate-image
-echo -e "${BLUE}🛤️  Criando rota POST /generate-image...${NC}"
-ROUTE_ID=$(aws apigatewayv2 create-route \
+# Criar todas as rotas necessárias
+echo -e "${BLUE}🛤️  Criando rotas...${NC}"
+
+# Rota 1: POST /generate-image
+echo -e "${BLUE}  📝 POST /generate-image${NC}"
+aws apigatewayv2 create-route \
     --api-id $API_ID \
     --route-key "POST /generate-image" \
     --target integrations/$INTEGRATION_ID \
-    --region $REGION \
-    --query 'RouteId' \
-    --output text)
+    --region $REGION > /dev/null 2>&1 || echo -e "${YELLOW}    (já existe)${NC}"
 
-echo -e "${GREEN}✅ Rota criada: $ROUTE_ID${NC}"
+# Rota 2: POST /generate-video
+echo -e "${BLUE}  📝 POST /generate-video${NC}"
+aws apigatewayv2 create-route \
+    --api-id $API_ID \
+    --route-key "POST /generate-video" \
+    --target integrations/$INTEGRATION_ID \
+    --region $REGION > /dev/null 2>&1 || echo -e "${YELLOW}    (já existe)${NC}"
+
+# Rota 3: GET /video-status/{taskId}
+echo -e "${BLUE}  📝 GET /video-status/{taskId}${NC}"
+aws apigatewayv2 create-route \
+    --api-id $API_ID \
+    --route-key "GET /video-status/{taskId}" \
+    --target integrations/$INTEGRATION_ID \
+    --region $REGION > /dev/null 2>&1 || echo -e "${YELLOW}    (já existe)${NC}"
+
+# Rota 4: POST /revenuecat-webhook
+echo -e "${BLUE}  📝 POST /revenuecat-webhook${NC}"
+aws apigatewayv2 create-route \
+    --api-id $API_ID \
+    --route-key "POST /revenuecat-webhook" \
+    --target integrations/$INTEGRATION_ID \
+    --region $REGION > /dev/null 2>&1 || echo -e "${YELLOW}    (já existe)${NC}"
+
+# Rota 5: GET /credits/{userId}
+echo -e "${BLUE}  📝 GET /credits/{userId}${NC}"
+aws apigatewayv2 create-route \
+    --api-id $API_ID \
+    --route-key "GET /credits/{userId}" \
+    --target integrations/$INTEGRATION_ID \
+    --region $REGION > /dev/null 2>&1 || echo -e "${YELLOW}    (já existe)${NC}"
+
+echo -e "${GREEN}✅ Todas as rotas criadas!${NC}"
 
 # Configura CORS
 echo -e "${BLUE}🌐 Configurando CORS...${NC}"
 aws apigatewayv2 update-api \
     --api-id $API_ID \
-    --cors-configuration AllowOrigins="*",AllowMethods="POST,OPTIONS",AllowHeaders="Content-Type,Authorization" \
+    --cors-configuration AllowOrigins="*",AllowMethods="GET,POST,OPTIONS",AllowHeaders="Content-Type,Authorization" \
     --region $REGION > /dev/null
 
 echo -e "${GREEN}✅ CORS configurado${NC}"
@@ -116,7 +149,7 @@ API_ENDPOINT=$(aws apigatewayv2 get-api \
     --query 'ApiEndpoint' \
     --output text)
 
-FULL_URL="$API_ENDPOINT/$STAGE_NAME/generate-image"
+BASE_URL="$API_ENDPOINT/$STAGE_NAME"
 
 echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -128,17 +161,23 @@ echo "   API ID: $API_ID"
 echo "   Endpoint: $API_ENDPOINT"
 echo "   Stage: $STAGE_NAME"
 echo ""
-echo -e "${GREEN}🔗 URL completa:${NC}"
-echo "   $FULL_URL"
+echo -e "${GREEN}🔗 URL Base:${NC}"
+echo "   $BASE_URL"
 echo ""
-echo -e "${BLUE}📋 Próximo passo:${NC}"
-echo "Cole essa URL no arquivo: src/constants/aiModels.ts"
+echo -e "${BLUE}📋 Rotas Disponíveis:${NC}"
+echo "   • POST   $BASE_URL/generate-image"
+echo "   • POST   $BASE_URL/generate-video"
+echo "   • GET    $BASE_URL/video-status/{taskId}"
+echo "   • POST   $BASE_URL/revenuecat-webhook"
+echo "   • GET    $BASE_URL/credits/{userId}"
 echo ""
-echo "apiUrl: '$FULL_URL',"
+echo -e "${BLUE}📋 Atualizar no código:${NC}"
+echo "   src/constants/config.ts:"
+echo "   PRODUCTION_BACKEND_URL = '$BASE_URL'"
 echo ""
-echo -e "${BLUE}🧪 Testar:${NC}"
-echo "curl -X POST $FULL_URL \\"
-echo "  -H 'Content-Type: application/json' \\"
-echo "  -d '{\"userId\":\"test\",\"imageBase64\":\"test\",\"description\":\"test\"}'"
+echo -e "${BLUE}🧪 Testar Webhook:${NC}"
+echo "   curl -X POST $BASE_URL/revenuecat-webhook \\"
+echo "     -H 'Content-Type: application/json' \\"
+echo "     -d '{\"event\":{\"type\":\"NON_RENEWING_PURCHASE\",\"app_user_id\":\"test\",\"product_id\":\"moovia_credits_1000\"}}'"
 echo ""
 
