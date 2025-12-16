@@ -143,7 +143,7 @@ export default {
   
   onboarding: {
     welcome: {
-      title: '用文字编辑任何内容',
+      title: '用AI创建精彩视频',
       button: '开始',
       footer: '继续即表示您接受我们的',
       terms: '服务条款',
@@ -152,14 +152,14 @@ export default {
     },
     tutorial: {
       step1: {
-        title: '选择您的图片',
+        title: '从图片开始',
       },
       step2: {
-        title: '输入您的编辑内容',
-        description: '给我一个男朋友',
+        title: '描述您的愿景',
+        description: '女孩跑向电视，进入使命召唤游戏',
       },
       step3: {
-        title: '观看转换',
+        title: '观看您的视频',
       },
       next: '下一步',
       finish: '开始',

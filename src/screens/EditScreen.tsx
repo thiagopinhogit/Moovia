@@ -52,14 +52,15 @@ type EditScreenProps = {
 export default function EditScreen({ navigation, route }: EditScreenProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { effect, imageUri: initialImageUri, aiModel } = route.params;
+  const { effect, imageUri: initialImageUri, aiModel, prompt } = route.params;
   const [imageUri, setImageUri] = useState<string | null>(initialImageUri || null);
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(prompt || '');
   const [showImagePickerModal, setShowImagePickerModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [progressValue, setProgressValue] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [selectedAIModel, setSelectedAIModel] = useState<string>(aiModel || 'image-to-video');
+  const [isPromptExpanded, setIsPromptExpanded] = useState(false);
   
   // Video configuration options with modals
   const [showModelModal, setShowModelModal] = useState(false);
@@ -387,6 +388,12 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
   const handleGenerate = async () => {
     console.log('🚀 [EditScreen] Generate button pressed');
     
+    // Prevent multiple clicks - set loading state IMMEDIATELY
+    if (isLoading) {
+      console.log('⚠️ [EditScreen] Already generating, ignoring click');
+      return;
+    }
+    
     // Reset cancellation flag
     cancelGenerationRef.current = false;
     setIsCancelled(false);
@@ -404,6 +411,24 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
       return;
     }
 
+    // Set loading state early to prevent multiple generations
+    setIsLoading(true);
+    
+    // Haptic forte quando começa a gerar
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    
+    // Recolher o teclado (non-blocking)
+    Keyboard.dismiss();
+    
+    // Animar o fade in do overlay
+    Animated.timing(loadingFadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+    
+    startLoadingAnimations();
+
     // 1. Check subscription first
     if (!isPro) {
       try {
@@ -413,10 +438,14 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
         const hasPro = await subscriptionService.isPro();
         if (!hasPro) {
           console.log('[EditScreen] Paywall closed but user still not Pro. Blocking generation silently.');
+          setIsLoading(false);
+          loadingFadeAnim.setValue(0);
           return;
         }
       } catch (error) {
         console.error('Error showing generate paywall:', error);
+        setIsLoading(false);
+        loadingFadeAnim.setValue(0);
         return;
       }
     }
@@ -429,6 +458,8 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
       if (!creditBalance) {
         console.error('❌ [EditScreen] Failed to get credit balance');
         Alert.alert('Error', 'Failed to check credit balance. Please try again.');
+        setIsLoading(false);
+        loadingFadeAnim.setValue(0);
         return;
       }
 
@@ -447,38 +478,26 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
           const newBalance = await getCreditBalance();
           if (!newBalance || newBalance.credits < creditCost) {
             console.log('[EditScreen] Paywall closed but user still has insufficient credits. Blocking generation.');
+            setIsLoading(false);
+            loadingFadeAnim.setValue(0);
             return;
           }
         } catch (error) {
           console.error('Error showing buy_credits paywall:', error);
+          setIsLoading(false);
+          loadingFadeAnim.setValue(0);
           return;
         }
       }
     } catch (error) {
       console.error('Error checking credits:', error);
       Alert.alert('Error', 'Failed to check credits. Please try again.');
+      setIsLoading(false);
+      loadingFadeAnim.setValue(0);
       return;
     }
     
     console.log('✅ [EditScreen] Paywall checks passed - proceeding with generation');
-
-    // Haptic forte quando começa a gerar
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-
-    // Set loading state IMMEDIATELY for instant UI feedback
-    setIsLoading(true);
-    
-    // Recolher o teclado (non-blocking)
-    Keyboard.dismiss();
-    
-    // Animar o fade in do overlay
-    Animated.timing(loadingFadeAnim, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-    
-    startLoadingAnimations();
 
     try {
       // Get user ID for video generation
@@ -902,8 +921,27 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Tab Selector - Text to Video / Image to Video */}
+          {/* Tab Selector - Image to Video / Text to Video */}
           <View style={styles.tabContainer}>
+            <TouchableOpacity 
+              style={[
+                styles.tab,
+                selectedAIModel === 'image-to-video' && styles.tabActive
+              ]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setSelectedAIModel('image-to-video');
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={[
+                styles.tabText,
+                selectedAIModel === 'image-to-video' && styles.tabTextActive
+              ]}>
+                Image to Video
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity 
               style={[
                 styles.tab,
@@ -921,25 +959,6 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
                 selectedAIModel === 'text-to-video' && styles.tabTextActive
               ]}>
                 Text to Video
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[
-                styles.tab,
-                selectedAIModel === 'image-to-video' && styles.tabActive
-              ]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setSelectedAIModel('image-to-video');
-              }}
-              activeOpacity={0.8}
-            >
-              <Text style={[
-                styles.tabText,
-                selectedAIModel === 'image-to-video' && styles.tabTextActive
-              ]}>
-                Image to Video
               </Text>
             </TouchableOpacity>
           </View>
@@ -989,15 +1008,50 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
 
           {/* Prompt Input - Always visible */}
           <View style={styles.promptSection}>
+            <View style={styles.promptHeader}>
+              <Text style={styles.promptLabel}>Video Description</Text>
+              {prompt && (
+                <TouchableOpacity 
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setIsPromptExpanded(!isPromptExpanded);
+                  }}
+                  style={styles.expandButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons 
+                    name={isPromptExpanded ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color={COLORS.primary.cyan} 
+                  />
+                  <Text style={styles.expandButtonText}>
+                    {isPromptExpanded ? 'Show Less' : 'Advanced'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <TextInput
-              style={styles.promptInput}
+              style={[
+                styles.promptInput,
+                isPromptExpanded ? styles.promptInputExpanded : styles.promptInputCollapsed
+              ]}
               placeholder="Type here a detailed description of what you want to see in your video"
               placeholderTextColor="#666"
               value={description}
               onChangeText={setDescription}
               multiline
               textAlignVertical="top"
+              numberOfLines={isPromptExpanded ? undefined : 3}
+              editable={isPromptExpanded || !prompt}
             />
+            {!isPromptExpanded && prompt && (
+              <View style={styles.promptOverlay}>
+                <LinearGradient
+                  colors={['transparent', COLORS.surface.secondary]}
+                  style={styles.promptGradient}
+                />
+              </View>
+            )}
           </View>
 
           {/* Configuration Options */}
@@ -1639,6 +1693,30 @@ const styles = StyleSheet.create({
   promptSection: {
     paddingHorizontal: 20,
     paddingTop: 24,
+    position: 'relative',
+  },
+  promptHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  promptLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text.secondary,
+  },
+  expandButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  expandButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary.cyan,
   },
   promptInput: {
     backgroundColor: COLORS.surface.secondary,
@@ -1647,10 +1725,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.text.primary,
     minHeight: 120,
-    maxHeight: 200,
     borderWidth: 1,
     borderColor: COLORS.ui.border,
     textAlignVertical: 'top',
+  },
+  promptInputCollapsed: {
+    maxHeight: 90,
+    overflow: 'hidden',
+  },
+  promptInputExpanded: {
+    maxHeight: 300,
+  },
+  promptOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 20,
+    right: 20,
+    height: 40,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    pointerEvents: 'none',
+  },
+  promptGradient: {
+    flex: 1,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   // Configuration Section
   configSection: {

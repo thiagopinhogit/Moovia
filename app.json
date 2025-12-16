@@ -13,7 +13,7 @@
       "backgroundColor": "#0C0D11"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.moovia.app",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Moovia needs access to your photo library to select videos and photos for AI video creation.",

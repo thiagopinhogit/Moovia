@@ -143,7 +143,7 @@ export default {
   
   onboarding: {
     welcome: {
-      title: 'Bearbeite alles mit Text',
+      title: 'Erstellen Sie erstaunliche Videos mit KI',
       button: 'Loslegen',
       footer: 'Indem Sie fortfahren, akzeptieren Sie unsere',
       terms: 'Nutzungsbedingungen',
@@ -152,14 +152,14 @@ export default {
     },
     tutorial: {
       step1: {
-        title: 'Wählen Sie Ihr Bild',
+        title: 'Beginnen Sie mit einem Bild',
       },
       step2: {
-        title: 'Geben Sie Ihre Bearbeitung ein',
-        description: 'Gib mir einen Freund',
+        title: 'Beschreiben Sie Ihre Vision',
+        description: 'Mädchen rennt in TV, tritt in Call of Duty-Spiel ein',
       },
       step3: {
-        title: 'Sehen Sie die Verwandlung',
+        title: 'Sehen Sie Ihr Video',
       },
       next: 'Weiter',
       finish: 'Loslegen',

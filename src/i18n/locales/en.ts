@@ -143,7 +143,7 @@ export default {
   
   onboarding: {
     welcome: {
-      title: 'Edit anything with text',
+      title: 'Create amazing videos with AI',
       button: 'Get started',
       footer: 'By continuing, you\'re accepting our',
       terms: 'Terms of Service',
@@ -152,14 +152,14 @@ export default {
     },
     tutorial: {
       step1: {
-        title: 'Choose Your Image',
+        title: 'Start with an Image',
       },
       step2: {
-        title: 'Enter Your Edit',
-        description: 'Give me a boyfriend',
+        title: 'Describe Your Vision',
+        description: 'Girl runs into TV, enters Call of Duty game',
       },
       step3: {
-        title: 'Watch It Transform',
+        title: 'Watch Your Video',
       },
       next: 'Next',
       finish: 'Get Started',

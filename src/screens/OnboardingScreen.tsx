@@ -26,7 +26,7 @@ import COLORS from '../constants/colors';
 const { width, height } = Dimensions.get('window');
 const CAROUSEL_CARD_WIDTH = width * 0.36;
 const CAROUSEL_GAP = 14;
-const SAMPLE_VIDEO = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
+const SAMPLE_VIDEO = require('../../assets/images/categories/join-tv-cod/after.mp4');
 
 type OnboardingScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
@@ -50,9 +50,9 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
     {
       id: '1',
       type: 'welcome',
-      title: 'Edit anything with Moovia',
-      image1: require('../../assets/images/categories/ai-boyfriend/before.jpg'),
-      image2: require('../../assets/images/categories/ai-boyfriend/after.jpg'),
+      title: t('onboarding.welcome.title'),
+      image1: require('../../assets/images/categories/join-tv-cod/before.jpg'),
+      image2: require('../../assets/images/categories/join-tv-cod/before.jpg'),
     },
     {
       id: '2',
@@ -60,16 +60,19 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
       slides: [
         {
           title: t('onboarding.tutorial.step1.title'),
-          image: require('../../assets/images/categories/ai-boyfriend/before.jpg'),
+          image: require('../../assets/images/categories/join-tv-cod/before.jpg'),
+          isStatic: true,
         },
         {
           title: t('onboarding.tutorial.step2.title'),
           description: t('onboarding.tutorial.step2.description'),
-          image: require('../../assets/images/categories/ai-boyfriend/before.jpg'),
+          image: require('../../assets/images/categories/join-tv-cod/before.jpg'),
+          isStatic: true,
         },
         {
           title: t('onboarding.tutorial.step3.title'),
-          image: require('../../assets/images/categories/ai-boyfriend/after.jpg'),
+          video: SAMPLE_VIDEO,
+          isVideo: true,
         },
       ],
     },
@@ -81,45 +84,38 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
     () => [
       {
         id: 'c1',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/ai-boyfriend/after.jpg'),
-        label: 'AI Boyfriend',
+        video: require('../../assets/images/categories/join-tv-cod/after.mp4'),
+        label: 'Join COD',
       },
       {
         id: 'c2',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/tattoo-try-on/after.jpg'),
-        label: 'Tattoo Try-On',
+        video: require('../../assets/images/categories/flying/after.mp4'),
+        label: 'Flying',
       },
       {
         id: 'c3',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/fat-pet/after.jpg'),
-        label: 'Fat Pet',
+        video: require('../../assets/images/categories/join-soccer/after.mp4'),
+        label: 'Join Soccer',
       },
       {
         id: 'c4',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/hairstyle-change/after.jpg'),
-        label: 'Hairstyle Change',
+        video: require('../../assets/images/categories/prank-arrested/after.mp4'),
+        label: 'Arrested Prank',
       },
       {
         id: 'c5',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/plumber/after.jpg'),
-        label: 'Plumber',
+        video: require('../../assets/images/categories/join-tennis/after.mp4'),
+        label: 'Join Tennis',
       },
       {
         id: 'c6',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/homeless/after.jpg'),
-        label: 'Homeless',
+        video: require('../../assets/images/categories/flood/after.mp4'),
+        label: 'Flood Effect',
       },
       {
         id: 'c7',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/crashed-car/after.jpg'),
-        label: 'Crashed Car',
+        video: require('../../assets/images/categories/join-tv-fortnite/after.mp4'),
+        label: 'Join Fortnite',
       },
     ],
     []
@@ -266,7 +262,6 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
                       <View key={`${item.id}-${idx}`} style={{ marginRight: CAROUSEL_GAP }}>
                         <VideoCard
                           videoUri={item.video}
-                          poster={item.poster}
                           title={item.label}
                           width={CAROUSEL_CARD_WIDTH}
                           height={CAROUSEL_CARD_WIDTH * 1.78}
@@ -374,7 +369,7 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
             {isLastSlide && <View style={styles.navButton} />}
           </SafeAreaView>
 
-          {/* Main Image */}
+          {/* Main Image or Video */}
           <Animated.View 
             style={[
               styles.tutorialImageContainer,
@@ -397,11 +392,21 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
               },
             ]}
           >
-            <Image
-              source={currentSlide.image}
-              style={styles.tutorialImage}
-              resizeMode="cover"
-            />
+            {currentSlide.isVideo ? (
+              <VideoCard
+                videoUri={currentSlide.video}
+                {...((currentSlide as any).poster && { poster: (currentSlide as any).poster })}
+                title=""
+                width={width * 0.85}
+                height={width * 0.85 * 1.35}
+              />
+            ) : (
+              <Image
+                source={currentSlide.image}
+                style={styles.tutorialImage}
+                resizeMode="cover"
+              />
+            )}
             {tutorialIndex === 1 && (
               <View style={styles.textBubble}>
                 <Text style={styles.textBubbleText}>

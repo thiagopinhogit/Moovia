@@ -5,7 +5,7 @@ import COLORS from '../constants/colors';
 import TYPO from '../constants/typography';
 
 type VideoCardProps = {
-  videoUri: string;
+  videoUri: string | number;
   poster?: string | ImageSourcePropType;
   title: string;
   width: number;
@@ -27,20 +27,26 @@ const VideoCard: React.FC<VideoCardProps> = ({
     <TouchableOpacity style={[styles.card, { width }]} activeOpacity={0.9} onPress={onPress}>
       <View style={[styles.videoWrapper, { width, height }]}>
         <Video
-          source={{ uri: videoUri }}
+          source={typeof videoUri === 'string' ? { uri: videoUri } : videoUri}
           style={styles.video}
           isMuted
           shouldPlay
           isLooping
           resizeMode="cover"
-          posterSource={typeof poster === 'string' ? { uri: poster } : poster}
-          usePoster={!!poster}
+          {...(poster && {
+            posterSource: typeof poster === 'string' ? { uri: poster } : poster,
+            usePoster: true,
+          })}
         />
-        <View style={styles.overlay}>
-          <Text style={styles.title} numberOfLines={1}>
-            {title}
-          </Text>
-        </View>
+        {(title || description) && (
+          <View style={styles.overlay}>
+            {title && (
+              <Text style={styles.title} numberOfLines={1}>
+                {title}
+              </Text>
+            )}
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );

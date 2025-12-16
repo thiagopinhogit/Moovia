@@ -143,7 +143,7 @@ export default {
   
   onboarding: {
     welcome: {
-      title: 'Modifiez n\'importe quoi avec du texte',
+      title: 'Créez des vidéos incroyables avec l\'IA',
       button: 'Commencer',
       footer: 'En continuant, vous acceptez nos',
       terms: 'Conditions d\'Utilisation',
@@ -152,14 +152,14 @@ export default {
     },
     tutorial: {
       step1: {
-        title: 'Choisissez Votre Image',
+        title: 'Commencez avec une Image',
       },
       step2: {
-        title: 'Entrez Votre Modification',
-        description: 'Donne-moi un petit ami',
+        title: 'Décrivez Votre Vision',
+        description: 'Fille court vers TV, entre dans jeu Call of Duty',
       },
       step3: {
-        title: 'Regardez la Transformation',
+        title: 'Regardez Votre Vidéo',
       },
       next: 'Suivant',
       finish: 'Commencer',

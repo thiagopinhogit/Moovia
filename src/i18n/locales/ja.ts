@@ -143,7 +143,7 @@ export default {
   
   onboarding: {
     welcome: {
-      title: 'テキストで何でも編集',
+      title: 'AIで素晴らしい動画を作成',
       button: '始める',
       footer: '続行することで、当社の',
       terms: '利用規約',
@@ -152,14 +152,14 @@ export default {
     },
     tutorial: {
       step1: {
-        title: '画像を選択',
+        title: '画像から始める',
       },
       step2: {
-        title: '編集内容を入力',
-        description: '彼女をください',
+        title: 'ビジョンを描写',
+        description: '女の子がテレビに走り、Call of Dutyゲームに入る',
       },
       step3: {
-        title: '変化を見る',
+        title: '動画を見る',
       },
       next: '次へ',
       finish: '始める',

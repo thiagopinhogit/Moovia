@@ -76,86 +76,120 @@ const buildBeforeAfterPreview = (imageUri: string) => {
 
 const SAMPLE_VIDEO = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
 
-// Trending items as videos
+// Category sections organized by theme
 const SECTION_ITEMS = [
   {
-    id: 'sec-made-it',
-    title: 'We Made It!',
+    id: 'sec-join-games',
+    title: 'Join Games 🎮',
     items: [
-  {
-    id: 'trending-1',
-        name: 'AI Video Remix',
-        description: 'Transforme qualquer clipe em um remix cinematográfico',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/ai-boyfriend/after.jpg'),
-  },
-  {
-    id: 'trending-2',
-        name: 'Diamond Duo',
-        description: 'Duo brilhante em estética cinematográfica',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/tattoo-try-on/after.jpg'),
-  },
-  {
-    id: 'trending-3',
-        name: 'Diamond Drip',
-        description: 'Estilo urbano premium em vídeo',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/fat-pet/after.jpg'),
+      {
+        id: 'game-1',
+        name: 'Call of Duty',
+        description: 'Join the battlefield and start shooting',
+        video: require('../../assets/images/categories/join-tv-cod/after.mp4'),
+        prompt: 'girl runs across the room toward a TV on the far side, showing a Call of Duty–style first-person shooter game. She picks up speed, her footsteps quick and determined. As she reaches the TV, her body passes cleanly through the screen — no pause, no impact — as if the surface melts around her. On the other side, she bursts into the Call of Duty battlefield, still running at full speed through smoke, debris, and soldiers. She needs to grab a futuristic weapon and enter the action, dodging enemies and moving with the pace of a real COD match and she starts shootin the gun. Make it look like a realistic Call of Duty gameplay broadcast. Make her run into the tv!! Show the call of duty sign. Make sure the transition is seamless, with her entering the TV and the game without any effects when she enters the TV, for a perfect finish.',
+      },
+      {
+        id: 'game-2',
+        name: 'Fortnite',
+        description: 'Drop into the island and get that Victory Royale',
+        video: require('../../assets/images/categories/join-tv-fortnite/after.mp4'),
+        prompt: 'A girl runs across the room toward a TV on the far side, which is displaying an intense Fortnite third-person shooter match set in a modern city with tall buildings and urban structures. She accelerates, her footsteps sharp and determined. As she reaches the TV, her body passes smoothly through the screen — no visual effects, no distortion — as if the TV surface liquefies around her. On the other side, she bursts directly into the Fortnite island, still running at full speed through city streets surrounded by tall buildings, rooftops, and elevated structures. Her size perfectly matches the Fortnite characters — normal player scale, not oversized. Immediately, enemy players spot her and begin shooting at her from different directions, bullets flying past, muzzle flashes visible from rooftops and behind cover. She dodges incoming fire while sprinting and sliding, builds ramps and walls for protection, grabs a Fortnite-style weapon (assault rifle or shotgun), and starts firing back at the enemies. The Fortnite logo appears. Make the transition seamless.',
+      },
+      {
+        id: 'game-3',
+        name: 'Clash Royale',
+        description: 'Enter the arena and clash with opponents',
+        video: require('../../assets/images/categories/join-tv-clash/after.mp4'),
+        prompt: 'girl runs across the room toward a TV on the far side, showing a Clash royal active game. She picks up speed, her footsteps quick and determined. As she reaches the TV, her body passes cleanly through the screen — no pause, no impact — as if the surface melts around her. On the other side, she bursts into the Clash royal battlefield, still running at full speed through fireballs and character. Make it look like a realistic clash royal game. Make her run into the tv. Show the clash royal sign',
       },
     ],
   },
   {
-    id: 'sec-popular',
-    title: 'Popular',
+    id: 'sec-join-sports',
+    title: 'Join Sports ⚽',
     items: [
       {
-        id: 'popular-1',
-        name: 'Arrest Prank',
-        description: 'Cena viral em segundos',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/plumber/after.jpg'),
-  },
-  {
-        id: 'popular-2',
-        name: 'Gas Station',
-        description: 'Ação noturna cinematográfica',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/homeless/after.jpg'),
+        id: 'sport-1',
+        name: 'Soccer',
+        description: 'Jump into the match and score goals',
+        video: require('../../assets/images/categories/join-soccer/after.mp4'),
+        prompt: 'A girl suddenly stands up and starts running across the room toward a TV on the far side, showing a soccer match. She picks up speed, her footsteps quick and determined. As she reaches the TV, her body passes cleanly through the screen — no pause, no impact — as if the surface melts around her. On the other side, she bursts out onto the soccer field, still running at full speed toward the players, becoming part of the match. She have to score the goal in soccer. Make it realistic',
       },
       {
-        id: 'popular-3',
-        name: 'Twilight',
-        description: 'Mood gelado, vibe dramática',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/crashed-car/after.jpg'),
+        id: 'sport-2',
+        name: 'Tennis',
+        description: 'Hit the court and serve aces',
+        video: require('../../assets/images/categories/join-tennis/after.mp4'),
+        prompt: 'A girl suddenly stands up and starts running across the room toward a TV on the far side, showing a professional tennis match. She picks up speed, her footsteps quick and determined. As she reaches the TV, her body passes cleanly through the screen — no pause, no impact — as if the surface melts around her. On the other side, she bursts out onto the tennis court, still running at full speed toward the net, becoming part of the match. She grabs a tennis racket and serves a powerful ace. Make it realistic',
+      },
+      {
+        id: 'sport-3',
+        name: 'Basketball',
+        description: 'Take the court and dunk like a pro',
+        video: require('../../assets/images/categories/join-basket/after.mp4'),
+        prompt: 'A girl suddenly stands up and starts running across the room toward a TV on the far side, showing an NBA basketball game. She picks up speed, her footsteps quick and determined. As she reaches the TV, her body passes cleanly through the screen — no pause, no impact — as if the surface melts around her. On the other side, she bursts out onto the basketball court, still running at full speed toward the hoop, becoming part of the match. She jumps high and makes an epic slam dunk. Make it realistic',
+      },
+      {
+        id: 'sport-4',
+        name: 'Football',
+        description: 'Enter the field and make touchdowns',
+        video: require('../../assets/images/categories/join-football/after.mp4'),
+        prompt: 'A girl suddenly stands up and starts running across the room toward a TV on the far side, showing a football match. She picks up speed, her footsteps quick and determined. As she reaches the TV, her body passes cleanly through the screen — no pause, no impact — as if the surface melts around her. On the other side, she bursts out onto the football field, still running at full speed toward the players, becoming part of the match. She have to score the goal football. Make it realistic',
+      },
+      {
+        id: 'sport-5',
+        name: 'Hockey',
+        description: 'Hit the ice and score goals',
+        video: require('../../assets/images/categories/join-hockey/after.mp4'),
+        prompt: 'A girl suddenly stands up and starts running across the room toward a TV on the far side, showing an intense ice hockey match. She picks up speed, her footsteps quick and determined. As she reaches the TV, her body passes cleanly through the screen — no pause, no impact — as if the surface melts around her. On the other side, she bursts out onto the ice rink, still running at full speed toward the goal, becoming part of the match. She grabs a hockey stick and shoots the puck into the goal. Make it realistic',
       },
     ],
   },
   {
-    id: 'sec-xmas',
-    title: 'Christmas is Coming',
+    id: 'sec-pranks',
+    title: 'Pranks & Fun 😂',
     items: [
       {
-        id: 'xmas-1',
-        name: 'Christmas Portraits',
-        description: 'Retratos natalinos com bokeh',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/ai-boyfriend/after.jpg'),
-  },
-  {
-        id: 'xmas-2',
-        name: 'Santa Season',
-        description: 'Clima de família e magia',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/hairstyle-change/after.jpg'),
+        id: 'prank-1',
+        name: 'Arrested',
+        description: 'Get arrested in style',
+        video: require('../../assets/images/categories/prank-arrested/after.mp4'),
+        prompt: 'Two police officers escorting the person from the reference image to a police station in the United States. All of them are positioned in front of the police station building, clearly visible at the entrance. The person looks scared and anxious, with a fearful facial expression. The police officers are wearing full official uniforms, including police hats. The scene is realistic, with an authentic American police station exterior and a serious, tense atmosphere.',
       },
       {
-        id: 'xmas-3',
-        name: 'Polaroid Christmas',
-        description: 'Look retrô e cozy',
-        video: SAMPLE_VIDEO,
-        poster: require('../../assets/images/categories/plumber/after.jpg'),
+        id: 'prank-2',
+        name: 'Plumber',
+        description: 'Plumber emergency at home',
+        video: require('../../assets/images/categories/prank-plumber/after.mp4'),
+        prompt: 'Single scene, no cuts. The person from the reference image is at home when suddenly a plumber arrives in an emergency. Water starts spraying from broken pipes in the bathroom or kitchen. The person reacts in shock and panic as water floods the floor. The plumber works frantically with tools scattered around, trying to fix the burst pipe while water continues to spray. Chaotic emergency scene with realistic water effects, dramatic lighting, and comedic disaster atmosphere. Make it look authentic and humorous.',
+      },
+      {
+        id: 'prank-3',
+        name: 'Boyfriend Snap',
+        description: 'Surprise your boyfriend',
+        video: require('../../assets/images/categories/boyfriend-snap/after.mp4'),
+        prompt: 'Single scene, no cuts. The person from the reference image suddenly appears behind their boyfriend/partner and surprises them with a loud sound or unexpected gesture. The boyfriend jumps in shock, his face showing genuine surprise and fear for a moment, then both start laughing. Natural indoor lighting, authentic reactions, playful atmosphere. The camera captures both people in frame throughout the prank. Make it look like a real, spontaneous moment caught on camera.',
+      },
+    ],
+  },
+  {
+    id: 'sec-magic',
+    title: 'Magic Effects ✨',
+    items: [
+      {
+        id: 'magic-1',
+        name: 'Flying',
+        description: 'Fly through the sky',
+        video: require('../../assets/images/categories/flying/after.mp4'),
+        prompt: 'Single scene, no cuts, no scene change. The person from the reference image starts on the ground in an outdoor location with a clear sky background. Suddenly, they begin to levitate slowly, rising off the ground. Their body lifts higher and higher into the air, arms outstretched like a superhero. They soar through the sky, flying smoothly above landscapes and clouds. The camera follows them as they fly, showing the epic aerial perspective. Wind effects on their hair and clothes. Cinematic superhero style, magical realism, breathtaking views, professional VFX quality. Make it look realistic and smooth.',
+      },
+      {
+        id: 'magic-2',
+        name: 'Flood',
+        description: 'Create dramatic flood scenes',
+        video: require('../../assets/images/categories/flood/after.mp4'),
+        prompt: 'dia chuvoso, Single scene, no cuts, no scene change. From the very first frame, the house is already flooded, with water reaching the feet/base of the sofa. The environment is completely static, realistic, and quiet. As the video continues, more water slowly enters the house, causing the water level to rise very gradually, without splashing or sudden movement. The flooding progresses in a calm, realistic way. The only movement is the camera: it starts far away, showing the living room and the flooded house as a whole, then slowly moves closer, approaching the sofa and the water level to reveal details. No objects move, no furniture floats, no people appear. The scene remains the same from start to end, with realistic lighting, natural water behavior, and a continuous, believable shot.',
       },
     ],
   },
@@ -416,9 +450,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const handleEffectPress = (effect: any) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Go directly to Edit screen with text-to-video as default
+    // Go directly to Edit screen with image-to-video as default
     navigation.navigate('Edit', { 
-      aiModel: 'text-to-video'
+      aiModel: 'image-to-video'
     });
   };
 
@@ -436,9 +470,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const handleRecentItemPress = (item: HistoryItem) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Go directly to Edit screen with text-to-video as default
+    // Go directly to Edit screen with image-to-video as default
     navigation.navigate('Edit', { 
-      aiModel: 'text-to-video'
+      aiModel: 'image-to-video'
     });
   };
 
@@ -651,16 +685,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 <VideoCard
                 key={item.id}
                   videoUri={item.video}
-                  poster={item.poster}
                   title={item.name}
                   description={item.description}
                 width={CARD_WIDTH}
                   height={CARD_WIDTH * 1.35}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  // Go directly to Edit screen with text-to-video as default
+                  // Go directly to Edit screen with image-to-video and pre-filled prompt
                   navigation.navigate('Edit', { 
-                    aiModel: 'text-to-video'
+                    aiModel: 'image-to-video',
+                    prompt: item.prompt
                   });
                 }}
               />

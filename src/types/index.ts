@@ -20,7 +20,7 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Home: undefined;
   CategoryDetail: { effect: EditEffect };
-  Edit: { effect?: EditEffect; imageUri?: string; originalImageUri?: string; aiModel?: string };
+  Edit: { effect?: EditEffect; imageUri?: string; originalImageUri?: string; aiModel?: string; prompt?: string };
   Loading: { imageUri: string; description: string; effect?: EditEffect };
   History: undefined;
   PurchaseSuccess: {

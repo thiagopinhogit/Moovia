@@ -143,7 +143,7 @@ export default {
   
   onboarding: {
     welcome: {
-      title: '텍스트로 무엇이든 편집',
+      title: 'AI로 멋진 동영상 만들기',
       button: '시작하기',
       footer: '계속하면 당사의',
       terms: '서비스 약관',
@@ -152,14 +152,14 @@ export default {
     },
     tutorial: {
       step1: {
-        title: '이미지 선택',
+        title: '이미지로 시작',
       },
       step2: {
-        title: '편집 내용 입력',
-        description: '여자친구를 주세요',
+        title: '비전 설명',
+        description: '소녀가 TV로 달려가 Call of Duty 게임에 입장',
       },
       step3: {
-        title: '변환 보기',
+        title: '동영상 보기',
       },
       next: '다음',
       finish: '시작하기',
