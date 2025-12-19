@@ -46,7 +46,7 @@ export const generateVideoKling = async (
       };
     }
 
-    if (model.provider !== 'kling') {
+    if (model.provider !== 'kling' && model.provider !== 'fal-ai') {
       return {
         success: false,
         error: 'This function only supports Kling AI models',
@@ -55,7 +55,7 @@ export const generateVideoKling = async (
 
     // Prepare request body according to Kling AI API spec
     const requestBody: any = {
-      model_name: request.modelId === 'kling-2.5-turbo' ? 'kling-v2-5-turbo' : 'kling-v1',
+      model_name: request.modelId === 'kling-2.5-turbo' ? 'kling-v2.5-turbo-pro' : 'kling-v1-5-pro',
       prompt: request.prompt,
       duration: Math.min(request.duration || 5, model.maxDuration),
       aspect_ratio: request.aspectRatio || '16:9',
@@ -84,7 +84,16 @@ export const generateVideoKling = async (
     const installationId = await Application.getIosIdForVendorAsync();
     const userId = installationId ? `device_${installationId}` : 'anonymous';
 
-    // Call Kling AI API through your backend
+    // Map frontend model ID to backend model name
+    const backendModel = request.modelId === 'kling-2.5-turbo' ? 'kling-v2.5-turbo-pro' : 'kling-v1-5-pro';
+    
+    console.log('📤 [VideoGen] Sending request to backend:', {
+      provider: 'fal-ai',
+      model: backendModel,
+      duration: requestBody.duration.toString(),
+    });
+
+    // Call Kling AI API through your backend (via Fal AI)
     const response = await fetch(`${BACKEND_API_URL}/generate-video`, {
       method: 'POST',
       headers: {
@@ -92,10 +101,11 @@ export const generateVideoKling = async (
       },
       body: JSON.stringify({
         userId,
+        provider: 'fal-ai', // Use Fal AI provider
         prompt: request.prompt,
         imageUrl: request.imageUrl,
         imageBase64: request.imageBase64,
-        model: request.modelId === 'kling-2.5-turbo' ? 'kling-v2-5-turbo' : 'kling-v1',
+        model: backendModel,
         duration: requestBody.duration.toString(),
         aspectRatio: requestBody.aspect_ratio,
         negativePrompt: request.negativePrompt,
@@ -293,6 +303,7 @@ export const generateVideo = async (
   // Route to appropriate provider
   switch (model.provider) {
     case 'kling':
+    case 'fal-ai':
       return generateVideoKling(request);
     
     case 'google-veo':

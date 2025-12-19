@@ -10,6 +10,8 @@ import {
   Image,
   Animated,
   Easing,
+  ScrollView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,8 +26,11 @@ import { useSubscription } from '../context/SubscriptionContext';
 import COLORS from '../constants/colors';
 
 const { width, height } = Dimensions.get('window');
-const CAROUSEL_CARD_WIDTH = width * 0.36;
-const CAROUSEL_GAP = 14;
+const isIPad = width >= 768; // iPad detection
+// Much smaller cards on iPad to ensure button visibility
+const CAROUSEL_CARD_WIDTH = width * (isIPad ? 0.22 : 0.36);
+const CAROUSEL_CARD_HEIGHT = CAROUSEL_CARD_WIDTH * (isIPad ? 1.5 : 1.78); // Less height on iPad
+const CAROUSEL_GAP = isIPad ? 12 : 14;
 const SAMPLE_VIDEO = require('../../assets/images/categories/join-tv-cod/after.mp4');
 
 type OnboardingScreenProps = {
@@ -202,9 +207,12 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
         // Trigger onboarding-specific paywall before finishing onboarding
         if (!isPro) {
           try {
+            console.log('🎯 [OnboardingScreen] Attempting to show paywall...');
             await showPaywall('onboarding');
           } catch (error) {
-            console.error('Error showing onboarding paywall:', error);
+            console.warn('⚠️  [OnboardingScreen] Error showing onboarding paywall (continuing anyway):', error);
+            // Continue to home even if paywall fails
+            // This ensures the app doesn't get stuck if subscription service is unavailable
           }
         }
 
@@ -246,8 +254,13 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
       >
         <StatusBar barStyle="light-content" />
         
-        <SafeAreaView edges={['top']} style={styles.welcomeSafeArea}>
-          <View style={styles.welcomeContent}>
+        <SafeAreaView edges={['top', 'bottom']} style={styles.welcomeSafeArea}>
+          <ScrollView 
+            style={styles.scrollView}
+            contentContainerStyle={styles.welcomeContent}
+            showsVerticalScrollIndicator={isIPad} // Show scroll indicator on iPad
+            bounces={true} // Enable bouncing to indicate scrollability
+          >
             <View style={styles.welcomeTop}>
               {/* Infinite Before/After carousel */}
               <View style={styles.carouselContainer}>
@@ -264,7 +277,7 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
                           videoUri={item.video}
                           title={item.label}
                           width={CAROUSEL_CARD_WIDTH}
-                          height={CAROUSEL_CARD_WIDTH * 1.78}
+                          height={CAROUSEL_CARD_HEIGHT}
                         />
                       </View>
                     );
@@ -273,12 +286,14 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
               </View>
 
               {/* Title */}
-              <Text style={styles.welcomeTitle}>{pages[0].title}</Text>
+              <Text style={[styles.welcomeTitle, isIPad && styles.welcomeTitleIPad]}>
+                {pages[0].title}
+              </Text>
               
               {/* Wand GIF */}
               <Image
                 source={require('../../assets/images/splash-animation.gif')}
-                style={styles.wandGif}
+                style={[styles.wandGif, isIPad && styles.wandGifIPad]}
                 resizeMode="contain"
               />
             </View>
@@ -317,7 +332,7 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
                 </View>
               </View>
             </View>
-          </View>
+          </ScrollView>
         </SafeAreaView>
       </LinearGradient>
     </View>
@@ -327,6 +342,7 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
     const tutorialSlides = pages[1].slides || [];
     const currentSlide = tutorialSlides[tutorialIndex];
     const isLastSlide = tutorialIndex === tutorialSlides.length - 1;
+    const isSmallDevice = height < 700; // iPhone SE, Mini, etc
 
     return (
       <View style={styles.pageContainer}>
@@ -369,8 +385,16 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
             {isLastSlide && <View style={styles.navButton} />}
           </SafeAreaView>
 
-          {/* Main Image or Video */}
-          <Animated.View 
+          {/* Content - wrapped in ScrollView for small devices */}
+          <ScrollView
+            style={styles.tutorialScrollView}
+            contentContainerStyle={styles.tutorialScrollContent}
+            showsVerticalScrollIndicator={isSmallDevice} // Show on small devices
+            bounces={true}
+            scrollEnabled={isSmallDevice} // Only scroll on small devices
+          >
+            {/* Main Image or Video */}
+            <Animated.View 
             style={[
               styles.tutorialImageContainer,
               {
@@ -397,13 +421,13 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
                 videoUri={currentSlide.video}
                 {...((currentSlide as any).poster && { poster: (currentSlide as any).poster })}
                 title=""
-                width={width * 0.85}
-                height={width * 0.85 * 1.35}
+                width={width * (isIPad ? 0.65 : 0.85)} // Smaller on iPad
+                height={width * (isIPad ? 0.65 : 0.85) * (isIPad ? 1.2 : 1.35)} // Shorter aspect on iPad
               />
             ) : (
               <Image
                 source={currentSlide.image}
-                style={styles.tutorialImage}
+                style={[styles.tutorialImage, isIPad && styles.tutorialImageIPad]}
                 resizeMode="cover"
               />
             )}
@@ -421,6 +445,7 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
           <Animated.Text 
             style={[
               styles.tutorialTitle,
+              isIPad && styles.tutorialTitleIPad,
               {
                 opacity: tutorialTitleAnim,
                 transform: [
@@ -443,8 +468,8 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
             {currentSlide.title}
           </Animated.Text>
 
-          {/* Next Button */}
-          <SafeAreaView edges={['bottom']} style={styles.tutorialFooter}>
+            {/* Next Button */}
+            <SafeAreaView edges={['bottom']} style={styles.tutorialFooter}>
             <TouchableOpacity
               style={styles.nextButtonWrapper}
               onPress={handleNext}
@@ -462,7 +487,8 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
                 <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
               </LinearGradient>
             </TouchableOpacity>
-          </SafeAreaView>
+            </SafeAreaView>
+          </ScrollView>
         </LinearGradient>
       </View>
     );
@@ -506,20 +532,24 @@ const styles = StyleSheet.create({
   },
   welcomeSafeArea: {
     flex: 1,
-    paddingTop: 32,
+  },
+  scrollView: {
+    flex: 1,
   },
   welcomeContent: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'space-between',
+    minHeight: height, // Ensure content fills screen but can scroll
+    paddingTop: isIPad ? 10 : 32,
   },
   welcomeTop: {
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 36,
+    paddingTop: isIPad ? 10 : 36,
   },
   welcomeBottom: {
     paddingHorizontal: 40,
-    paddingBottom: 30,
+    paddingBottom: isIPad ? 50 : 30, // More bottom padding for safe area
     gap: 16,
   },
   welcomeTitle: {
@@ -533,11 +563,22 @@ const styles = StyleSheet.create({
     lineHeight: 44,
     letterSpacing: -0.5,
   },
+  welcomeTitleIPad: {
+    fontSize: 42, // Slightly smaller
+    marginTop: 20, // Much less margin
+    marginBottom: 8, // Much less margin
+    lineHeight: 48,
+  },
   wandGif: {
     width: 100,
     height: 100,
     alignSelf: 'center',
     marginBottom: 24,
+  },
+  wandGifIPad: {
+    width: 90, // Smaller on iPad
+    height: 90,
+    marginBottom: 12, // Much less margin
   },
   getStartedButtonWrapper: {
     paddingHorizontal: 0,
@@ -585,9 +626,10 @@ const styles = StyleSheet.create({
   carouselContainer: {
     overflow: 'hidden',
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    marginTop: 32,
-    marginBottom: 32,
+    paddingVertical: isIPad ? 8 : 12,
+    marginTop: isIPad ? 12 : 32,
+    marginBottom: isIPad ? 12 : 32,
+    maxHeight: isIPad ? height * 0.28 : height * 0.45, // Much smaller on iPad
   },
   carouselRow: {
     flexDirection: 'row',
@@ -596,6 +638,13 @@ const styles = StyleSheet.create({
   // Tutorial Page Styles
   tutorialContainer: {
     flex: 1,
+  },
+  tutorialScrollView: {
+    flex: 1,
+  },
+  tutorialScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
   },
   tutorialHeader: {
     flexDirection: 'row',
@@ -635,11 +684,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 30,
     paddingTop: 20,
+    maxHeight: isIPad ? height * 0.5 : height * 0.55, // Limit height
   },
   tutorialImage: {
     width: '100%',
     height: '100%',
-    maxHeight: height * 0.5,
+    maxHeight: height * (isIPad ? 0.4 : 0.5), // Smaller on iPad
     borderRadius: 20,
     backgroundColor: COLORS.surface.secondary,
     shadowColor: COLORS.brand.violet,
@@ -649,6 +699,9 @@ const styles = StyleSheet.create({
     elevation: 12,
     borderWidth: 2,
     borderColor: COLORS.opacity.violet20,
+  },
+  tutorialImageIPad: {
+    maxHeight: height * 0.35, // Even smaller on iPad
   },
   textBubble: {
     position: 'absolute',
@@ -682,13 +735,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: COLORS.text.primary,
     paddingHorizontal: 40,
-    paddingVertical: 30,
+    paddingVertical: isIPad ? 20 : 30, // Less padding on iPad
     lineHeight: 38,
     letterSpacing: -0.5,
   },
+  tutorialTitleIPad: {
+    fontSize: 36, // Slightly larger on iPad
+    paddingVertical: 16, // Less padding
+    lineHeight: 42,
+  },
   tutorialFooter: {
     paddingHorizontal: 40,
-    paddingBottom: 20,
+    paddingBottom: isIPad ? 30 : 20, // More padding on iPad for safe area
   },
   nextButtonWrapper: {
     width: '100%',

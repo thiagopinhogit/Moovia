@@ -160,3 +160,6 @@ Sua infraestrutura está pronta para uso. O app pode começar a fazer chamadas p
 - [Ngrok Webhook Setup](./NGROK_WEBHOOK_SETUP.md)
 - [Security Guide](../docs/SECURITY_GUIDE.md)
 
+
+
+

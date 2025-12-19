@@ -530,15 +530,24 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   // Handle upgrade to Pro
   const handleUpgradePress = async () => {
     try {
+      console.log('[HomeScreen] Upgrade button pressed');
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      // Close modal first to prevent UI issues
+      setShowSettingsModal(false);
+      
+      // Wait a bit for modal animation to complete
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       await showPaywall();
+      console.log('[HomeScreen] Paywall flow completed');
     } catch (error) {
-      console.error('Error showing paywall:', error);
+      console.error('[HomeScreen] Error showing paywall:', error);
       Alert.alert(
         t('subscription.error'),
         t('subscription.errorMessage')
       );
-    }"/ "
+    }
   };
 
   // Handle restore purchases
@@ -798,12 +807,27 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                     style={styles.buyMoreButton}
                     onPress={async () => {
                       try {
+                        console.log('[HomeScreen] Buy More button pressed');
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        
+                        // Close modal first
                         setShowSettingsModal(false);
+                        
+                        // Wait for modal animation
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                        
+                        console.log('[HomeScreen] Showing buy_credits paywall');
                         await showPaywall('buy_credits');
+                        
+                        console.log('[HomeScreen] Paywall completed, reloading credits');
                         // Reload credits after purchase
                         await loadCredits();
                       } catch (error) {
-                        console.error('Error showing credits paywall:', error);
+                        console.error('[HomeScreen] Error showing credits paywall:', error);
+                        Alert.alert(
+                          t('subscription.error'),
+                          t('subscription.errorMessage')
+                        );
                       }
                     }}
                   >

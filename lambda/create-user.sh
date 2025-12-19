@@ -43,3 +43,6 @@ echo ""
 echo -e "${BLUE}💡 Dica:${NC} Salve esse User ID para usar no app!"
 echo ""
 
+
+
+

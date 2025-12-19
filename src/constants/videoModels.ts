@@ -3,7 +3,7 @@
  * Defines available AI models for video generation
  */
 
-export type VideoProvider = 'kling' | 'runway' | 'luma' | 'pika' | 'google-veo' | 'openai-sora' | 'minimax' | 'wan' | 'seedance' | 'higgsfield';
+export type VideoProvider = 'kling' | 'fal-ai' | 'runway' | 'luma' | 'pika' | 'google-veo' | 'openai-sora' | 'minimax' | 'wan' | 'seedance' | 'higgsfield';
 export type VideoModelType = 'text-to-video' | 'image-to-video';
 
 export interface VideoModel {
@@ -40,16 +40,16 @@ export interface ModelProvider {
 
 // Available Video Models
 export const VIDEO_MODELS: Record<string, VideoModel> = {
-  // Kling AI 2.5 Turbo - Fast and affordable (IMPLEMENTED)
-  // API Cost: $0.21 text (5s), $0.42 image (10s std) | 80% margin → 42-84 credits
-  // Durations: 5s or 10s only (no resolution option)
+  // Fal AI Kling 2.5 Turbo Pro - Fast and affordable (RECOMMENDED - IMPLEMENTED)
+  // API Cost via Fal AI: $0.21 text (5s), $0.42 image (10s std) | 80% margin → 42-84 credits
+  // More reliable than direct Kling API
   'kling-2.5-turbo': {
     id: 'kling-2.5-turbo',
-    displayName: 'Kling 2.5 Turbo',
-    provider: 'kling',
-    providerDisplayName: 'Kling',
+    displayName: 'Kling 2.5 Turbo (Fal AI)',
+    provider: 'fal-ai',
+    providerDisplayName: 'Fal AI + Kling',
     modelType: ['text-to-video', 'image-to-video'],
-    apiEndpoint: 'https://api.klingai.com/v1/videos/generations',
+    apiEndpoint: 'fal-ai/kling-video/v2.5-turbo/pro/image-to-video',
     creditsPerSecond: 8.4, // $0.21/5s = $0.042/s → 8.4 credits/s (80% margin)
     maxDuration: 10, // Supports 5s or 10s
     aspectRatios: ['16:9', '9:16', '1:1'],
@@ -57,29 +57,30 @@ export const VIDEO_MODELS: Record<string, VideoModel> = {
     quality: 'high',
     speed: 'fast',
     features: [
-      'Fast generation',
+      'Fast generation via Fal AI',
+      'More reliable than direct Kling',
       'High quality output',
       'Multiple aspect ratios',
       'Text or Image input',
       'Durations: 5s or 10s'
     ],
-    description: 'Fast and high-quality video generation',
+    description: 'Fast and high-quality video via Fal AI (RECOMMENDED)',
     pricing: {
       textToVideo: 42,   // $0.21 API cost (5s std) → 42 credits (80% margin)
       imageToVideo: 84,  // $0.42 API cost (10s std) → 84 credits (80% margin)
     }
   },
 
-  // Kling AI 2.0 Standard - Balanced (IMPLEMENTED)
+  // Kling AI 2.0 Standard via Fal AI - Balanced (IMPLEMENTED)
   // API Cost: Assuming $0.35 text (5s), $0.70 image (10s pro) | 80% margin → 70-140 credits
   // Durations: 5s or 10s only | Mode: std or pro
   'kling-2.0-standard': {
     id: 'kling-2.0-standard',
-    displayName: 'Kling 2.0 Standard',
-    provider: 'kling',
-    providerDisplayName: 'Kling',
+    displayName: 'Kling 1.5 Pro (Fal AI)',
+    provider: 'fal-ai',
+    providerDisplayName: 'Fal AI + Kling',
     modelType: ['text-to-video', 'image-to-video'],
-    apiEndpoint: 'https://api.klingai.com/v1/videos/generations',
+    apiEndpoint: 'fal-ai/kling-video/v1.5/pro/image-to-video',
     creditsPerSecond: 14, // $0.35/5s = $0.07/s → 14 credits/s (80% margin)
     maxDuration: 10,
     aspectRatios: ['16:9', '9:16', '1:1'],
@@ -87,13 +88,13 @@ export const VIDEO_MODELS: Record<string, VideoModel> = {
     quality: 'standard',
     speed: 'normal',
     features: [
-      'Longer videos',
+      'Longer videos via Fal AI',
       'Good quality',
-      'Mode: std or pro',
+      'Pro mode',
       'Multiple formats',
       'Durations: 5s or 10s'
     ],
-    description: 'Balanced quality with mode options (std/pro)',
+    description: 'Balanced quality via Fal AI',
     pricing: {
       textToVideo: 70,    // $0.35 API cost (5s pro) → 70 credits (80% margin)
       imageToVideo: 140,  // $0.70 API cost (10s pro) → 140 credits (80% margin)
@@ -291,8 +292,9 @@ export const getModelsByProviderGrouped = (): ModelProvider[] => {
 
 const getProviderDescription = (provider: VideoProvider): string => {
   const descriptions: Record<VideoProvider, string> = {
+    'fal-ai': 'Reliable Kling models via Fal AI infrastructure',
     'google-veo': 'Precision video with sound control',
-    'kling': 'Perfect motion with advanced video control',
+    'kling': 'Perfect motion with advanced video control (Direct API)',
     'openai-sora': 'Multi-shot video with sound generation',
     'minimax': 'High-dynamic, VFX-ready, fastest and most affordable',
     'wan': 'Camera-controlled video with sound, more freedom',
@@ -308,6 +310,7 @@ const getProviderDescription = (provider: VideoProvider): string => {
 const getProviderIcon = (provider: VideoProvider): string => {
   // Map of provider icons (you can use Ionicons names)
   const icons: Record<VideoProvider, string> = {
+    'fal-ai': 'flash-outline',
     'google-veo': 'logo-google',
     'kling': 'flash-outline',
     'openai-sora': 'aperture-outline',

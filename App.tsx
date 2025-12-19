@@ -9,7 +9,7 @@ import * as SplashScreen from 'expo-splash-screen';
 SplashScreen.preventAutoHideAsync();
 
 export default function App() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
@@ -17,24 +17,31 @@ export default function App() {
   });
 
   useEffect(() => {
-    if (fontsLoaded) {
-      Text.defaultProps = Text.defaultProps || {};
-      Text.defaultProps.style = [
-        { fontFamily: 'Inter_400Regular', color: '#F5F7FA' },
-        Text.defaultProps.style,
-      ];
+    if (fontsLoaded || fontError) {
+      console.log('📝 [App] Fonts loaded:', fontsLoaded, 'Font error:', fontError);
+      
+      if (fontsLoaded) {
+        Text.defaultProps = Text.defaultProps || {};
+        Text.defaultProps.style = [
+          { fontFamily: 'Inter_400Regular', color: '#F5F7FA' },
+          Text.defaultProps.style,
+        ];
 
-      TextInput.defaultProps = TextInput.defaultProps || {};
-      TextInput.defaultProps.style = [
-        { fontFamily: 'Inter_400Regular', color: '#F5F7FA' },
-        TextInput.defaultProps.style,
-      ];
+        TextInput.defaultProps = TextInput.defaultProps || {};
+        TextInput.defaultProps.style = [
+          { fontFamily: 'Inter_400Regular', color: '#F5F7FA' },
+          TextInput.defaultProps.style,
+        ];
+      } else {
+        console.warn('⚠️  [App] Font loading failed, using system fonts');
+      }
 
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded) {
+  // Show app even if fonts fail to load (use system fonts as fallback)
+  if (!fontsLoaded && !fontError) {
     return null;
   }
 

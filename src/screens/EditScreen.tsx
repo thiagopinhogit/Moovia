@@ -434,18 +434,22 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
       try {
         console.log('👤 [EditScreen] User is not Pro, showing generate_button paywall');
         await showPaywall('generate_button');
+        console.log('👤 [EditScreen] Paywall flow completed, checking status');
         await checkSubscriptionStatus();
         const hasPro = await subscriptionService.isPro();
+        console.log('👤 [EditScreen] Pro status after paywall:', hasPro);
         if (!hasPro) {
           console.log('[EditScreen] Paywall closed but user still not Pro. Blocking generation silently.');
           setIsLoading(false);
           loadingFadeAnim.setValue(0);
+          stopLoadingAnimations();
           return;
         }
       } catch (error) {
-        console.error('Error showing generate paywall:', error);
+        console.error('[EditScreen] Error showing generate paywall:', error);
         setIsLoading(false);
         loadingFadeAnim.setValue(0);
+        stopLoadingAnimations();
         return;
       }
     }
@@ -474,18 +478,22 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
         console.log('❌ [EditScreen] Insufficient credits, showing buy_credits paywall');
         try {
           await showPaywall('buy_credits');
+          console.log('💰 [EditScreen] Paywall completed, rechecking credits');
           // Recheck credits after paywall
           const newBalance = await getCreditBalance();
+          console.log('💰 [EditScreen] New balance:', newBalance?.credits);
           if (!newBalance || newBalance.credits < creditCost) {
             console.log('[EditScreen] Paywall closed but user still has insufficient credits. Blocking generation.');
             setIsLoading(false);
             loadingFadeAnim.setValue(0);
+            stopLoadingAnimations();
             return;
           }
         } catch (error) {
-          console.error('Error showing buy_credits paywall:', error);
+          console.error('[EditScreen] Error showing buy_credits paywall:', error);
           setIsLoading(false);
           loadingFadeAnim.setValue(0);
+          stopLoadingAnimations();
           return;
         }
       }
@@ -710,6 +718,25 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
       buttons,
       { cancelable: false }
     );
+  };
+
+  const stopLoadingAnimations = () => {
+    // Stop all animations
+    progressAnim.stopAnimation();
+    slideUpAnim.stopAnimation();
+    gifOpacityAnim.stopAnimation();
+    scaleAnim.stopAnimation();
+    
+    // Reset to default values
+    progressAnim.setValue(0);
+    slideUpAnim.setValue(80);
+    gifOpacityAnim.setValue(0);
+    scaleAnim.setValue(0.6);
+    
+    // Reset state
+    setProgressValue(0);
+    setLoadingMessage('');
+    message99StartTime.current = null;
   };
 
   const startLoadingAnimations = () => {

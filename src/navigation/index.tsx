@@ -19,17 +19,32 @@ const ONBOARDING_KEY = '@moovia_onboarding_completed';
 export default function Navigation() {
   const [showSplash, setShowSplash] = useState(true);
   const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<boolean | null>(null);
+  const [forceShowApp, setForceShowApp] = useState(false);
 
   useEffect(() => {
     checkOnboarding();
+    
+    // Failsafe: Force show app after 5 seconds if still loading
+    // This prevents the app from being stuck on a blank screen
+    const failsafeTimer = setTimeout(() => {
+      if (isOnboardingCompleted === null) {
+        console.warn('⚠️  [Navigation] Failsafe triggered: forcing app to show after timeout');
+        setIsOnboardingCompleted(false); // Show onboarding by default
+        setForceShowApp(true);
+      }
+    }, 5000);
+    
+    return () => clearTimeout(failsafeTimer);
   }, []);
 
   const checkOnboarding = async () => {
     try {
+      console.log('🔍 [Navigation] Checking onboarding status...');
       const value = await AsyncStorage.getItem(ONBOARDING_KEY);
+      console.log('📱 [Navigation] Onboarding status:', value);
       setIsOnboardingCompleted(value === 'true');
     } catch (error) {
-      console.error('Error checking onboarding:', error);
+      console.error('❌ [Navigation] Error checking onboarding:', error);
       setIsOnboardingCompleted(false);
     }
   };
@@ -39,8 +54,8 @@ export default function Navigation() {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
-  // Wait for onboarding check
-  if (isOnboardingCompleted === null) {
+  // Wait for onboarding check (but not forever due to failsafe)
+  if (isOnboardingCompleted === null && !forceShowApp) {
     return null;
   }
 

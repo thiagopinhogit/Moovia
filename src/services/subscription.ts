@@ -37,6 +37,9 @@ class SubscriptionService {
     }
 
     try {
+      console.log('🚀 [SubscriptionService] Starting initialization...');
+      console.log('🚀 [SubscriptionService] Platform:', Platform.OS, Platform.Version);
+      
       // Initialize RevenueCat
       const apiKey = Platform.select({
         ios: REVENUECAT_API_KEYS.ios,
@@ -45,37 +48,45 @@ class SubscriptionService {
 
       if (!apiKey || apiKey.includes('YOUR_')) {
         console.warn('⚠️ RevenueCat API key not configured. Please add your keys to src/services/subscription.ts');
+        throw new Error('RevenueCat API key not configured');
       }
 
       if (__DEV__) {
         Purchases.setLogLevel(LOG_LEVEL.DEBUG);
       }
 
+      console.log('📱 [SubscriptionService] Configuring RevenueCat...');
+      
       // Configure RevenueCat first (without user ID to avoid conflicts)
       await Purchases.configure({
         apiKey: apiKey || '',
       });
+      
+      console.log('✅ [SubscriptionService] RevenueCat configured');
 
       // Then login with device-based ID
-      const installationId = await Application.getIosIdForVendorAsync();
-      if (installationId && !userId) {
-        const deviceUserId = `device_${installationId}`;
-        console.log('📱 Logging in with device-based user ID:', deviceUserId.substring(0, 30) + '...');
-        
-        try {
+      try {
+        const installationId = await Application.getIosIdForVendorAsync();
+        if (installationId && !userId) {
+          const deviceUserId = `device_${installationId}`;
+          console.log('📱 Logging in with device-based user ID:', deviceUserId.substring(0, 30) + '...');
+          
           await Purchases.logIn(deviceUserId);
           console.log('✅ Successfully logged in with device ID');
-        } catch (error) {
-          console.error('❌ Failed to login with device ID:', error);
+        } else if (userId) {
+          // If custom userId provided, use it
+          await Purchases.logIn(userId);
+          console.log('✅ Logged in with custom user ID');
+        } else {
+          console.log('⚠️  No device ID available, using anonymous RevenueCat ID');
         }
-      } else if (userId) {
-        // If custom userId provided, use it
-        await Purchases.logIn(userId);
-        console.log('✅ Logged in with custom user ID');
-      } else {
-        console.log('⚠️  No device ID available, using anonymous RevenueCat ID');
+      } catch (loginError) {
+        console.warn('⚠️  Failed to login with device ID, continuing with anonymous ID:', loginError);
+        // Continue with initialization even if login fails
       }
 
+      console.log('🎨 [SubscriptionService] Configuring Superwall...');
+      
       // Initialize Superwall WITHOUT RevenueCat as PurchaseController
       // This is more reliable for React Native according to Superwall docs
       // RevenueCat will sync purchases automatically through StoreKit observation
@@ -83,6 +94,8 @@ class SubscriptionService {
         apiKey: SUPERWALL_API_KEY,
         // NOT using purchaseController - let Superwall handle purchases directly
       });
+
+      console.log('✅ [SubscriptionService] Superwall configured');
 
       // Enable verbose Superwall logs to debug paywall presentation
       await this.superwallInstance.setLogLevel(LogLevel.Debug);
@@ -93,19 +106,27 @@ class SubscriptionService {
       console.log('✅ Superwall configured successfully');
 
       // Set up customer info update listener to sync subscription status
-      Purchases.addCustomerInfoUpdateListener((info) => {
-        console.log('[RevenueCat] Customer info updated');
-        // Just sync subscription status, webhook handles credits
-        this.forceRefreshSubscriptionStatus();
-      });
+      try {
+        Purchases.addCustomerInfoUpdateListener((info) => {
+          console.log('[RevenueCat] Customer info updated');
+          // Just sync subscription status, webhook handles credits
+          this.forceRefreshSubscriptionStatus();
+        });
+      } catch (listenerError) {
+        console.warn('⚠️  Failed to set up customer info listener:', listenerError);
+      }
 
       // Sync initial subscription status with Superwall
+      console.log('🔄 [SubscriptionService] Syncing initial subscription status...');
       await this.syncSubscriptionStatus();
+      console.log('✅ [SubscriptionService] Initial subscription status synced');
 
       this.initialized = true;
       console.log('✅ Subscription services initialized successfully');
     } catch (error) {
       console.error('❌ Error initializing subscription services:', error);
+      console.error('❌ Error type:', error?.constructor?.name);
+      console.error('❌ Error message:', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   }
@@ -265,13 +286,15 @@ class SubscriptionService {
   async presentPaywall(placement?: string): Promise<void> {
     try {
       if (!this.superwallInstance) {
+        console.error('❌ [Paywall] Superwall not initialized. Cannot show paywall.');
         throw new Error('Superwall not initialized. Call initialize() first.');
       }
       
       // Use placement parameter (default to 'campaign_trigger' - Superwall's default)
       const placementName = placement || 'campaign_trigger';
       
-      console.log(`🎯 Attempting to show paywall for placement: "${placementName}"`);
+      console.log(`🎯 [Paywall] Attempting to show paywall for placement: "${placementName}"`);
+      console.log(`🎯 [Paywall] Platform: ${Platform.OS}, Version: ${Platform.Version}`);
       
       // Log current subscription status before showing paywall
       const isPro = await this.isPro();
@@ -362,6 +385,13 @@ class SubscriptionService {
       console.log(`✅ [Paywall] Register completed for placement: "${placementName}"`);
     } catch (error) {
       console.error('❌ [Paywall] Error presenting paywall:', error);
+      console.error('❌ [Paywall] Error details:', JSON.stringify(error, null, 2));
+      
+      // On iPad, sometimes Superwall can fail - log more context
+      if (Platform.OS === 'ios') {
+        console.error('❌ [Paywall] iOS/iPad specific error - may need Superwall configuration check');
+      }
+      
       throw error;
     }
   }

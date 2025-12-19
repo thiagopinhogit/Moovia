@@ -6,7 +6,6 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import { generateVideo as generateKlingVideo, checkVideoStatus as checkKlingStatus } from '../services/klingVideo';
 import { generateVideo as generateGoogleVeoVideo, checkVideoStatus as checkGoogleVeoStatus } from '../services/googleVeoVideoSDK';
-import { generateVideo as generateFalVideo, checkVideoStatus as checkFalStatus } from '../services/falVideo';
 import { 
   hasEnoughCredits, 
   getUserCredits,
@@ -159,27 +158,9 @@ export async function handleGenerateVideo(event: any, headers: any): Promise<API
         duration: parseInt(duration),
         aspectRatio: aspectRatio as '16:9' | '9:16' | '1:1',
       });
-    } else if (provider === 'fal-ai' || provider === 'kling') {
-      // Fal AI Kling models (includes both fal-ai and kling providers)
-      // We route 'kling' provider to Fal AI to avoid direct Kling API balance issues
-      console.log('🎯 [VideoGen] Routing to Fal AI provider (provider:', provider, ')');
-      
-      // Generate video with Fal AI
-      const videoRequest: any = {
-        model: model as 'kling-v2.5-turbo-pro' | 'kling-v2.5-turbo-standard' | 'kling-v1-5-pro',
-        prompt,
-        negativePrompt,
-        imageUrl: finalImageUrl,
-        duration: duration as '5' | '10',
-        aspectRatio: aspectRatio as '16:9' | '9:16' | '1:1',
-        cfgScale: 0.5, // Default CFG scale
-      };
-
-      result = await generateFalVideo(videoRequest);
     } else {
-      // Default to Kling AI (deprecated)
-      console.log('⚠️ [VideoGen] WARNING: Using deprecated Kling direct API');
-      console.log('🎯 [VideoGen] Routing to Kling provider (direct API)');
+      // Default to Kling AI
+      console.log('🎯 [VideoGen] Routing to Kling provider');
       
       // Generate video with Kling AI
       const videoRequest: any = {
@@ -382,9 +363,6 @@ export async function handleVideoStatus(event: any, headers: any): Promise<APIGa
     let result: any;
     if (provider === 'google-veo') {
       result = await checkGoogleVeoStatus(taskId);
-    } else if (provider === 'fal-ai' || provider === 'kling') {
-      // Route both fal-ai and kling to Fal AI status check
-      result = await checkFalStatus(taskId);
     } else {
       result = await checkKlingStatus(taskId);
     }
