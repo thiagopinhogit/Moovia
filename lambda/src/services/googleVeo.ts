@@ -9,7 +9,7 @@ export interface GoogleVeoVideoRequest {
   negativePrompt?: string;
   imageUrl?: string; // For image-to-video
   duration: '5' | '10' | number;
-  aspectRatio: '16:9' | '9:16' | '1:1';
+  aspectRatio: '16:9' | '9:16'; // Google Veo only supports 16:9 and 9:16 (not 1:1)
 }
 
 export interface GoogleVeoVideoResponse {

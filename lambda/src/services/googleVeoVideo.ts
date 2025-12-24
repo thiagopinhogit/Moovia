@@ -132,7 +132,7 @@ export async function generateVideo(request: GoogleVeoVideoRequest): Promise<Goo
     }
 
     // Add aspect ratio (default: 16:9)
-    // Veo 3.1/3: supports "16:9" (720p, 1080p), "9:16" (720p, 1080p)
+    // Google Veo only supports "16:9" and "9:16" (1:1 not supported)
     requestBody.aspectRatio = request.aspectRatio || '16:9';
 
     // Add resolution (default: 720p)

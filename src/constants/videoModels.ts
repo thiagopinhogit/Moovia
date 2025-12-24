@@ -113,7 +113,7 @@ export const VIDEO_MODELS: Record<string, VideoModel> = {
     apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-fast-generate-preview:predictLongRunning',
     creditsPerSecond: 30, // $0.15/sec → 30 credits/sec (80% margin)
     maxDuration: 8,
-    aspectRatios: ['16:9', '9:16', '1:1'],
+    aspectRatios: ['16:9', '9:16'], // 1:1 not supported by Google Veo
     resolutions: ['720p', '1080p'], // 1080p only for 16:9
     quality: 'high',
     speed: 'fast',
@@ -138,7 +138,7 @@ export const VIDEO_MODELS: Record<string, VideoModel> = {
     apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview:predictLongRunning',
     creditsPerSecond: 80, // $0.40/sec → 80 credits/sec (80% margin)
     maxDuration: 8, // Supports 4s, 6s, 8s
-    aspectRatios: ['16:9', '9:16', '1:1'],
+    aspectRatios: ['16:9', '9:16'], // 1:1 not supported by Google Veo
     resolutions: ['720p', '1080p'], // 1080p only for 8s
     quality: 'ultra',
     speed: 'normal',
@@ -161,7 +161,7 @@ export const VIDEO_MODELS: Record<string, VideoModel> = {
     apiEndpoint: 'https://api.google.com/veo/v1/generate',
     creditsPerSecond: 30, // $0.15/sec → 30 credits/sec (80% margin)
     maxDuration: 8,
-    aspectRatios: ['16:9', '9:16', '1:1'],
+    aspectRatios: ['16:9', '9:16'], // 1:1 not supported by Google Veo
     resolutions: ['720p', '1080p'],
     quality: 'high',
     speed: 'fast',
@@ -184,7 +184,7 @@ export const VIDEO_MODELS: Record<string, VideoModel> = {
     apiEndpoint: 'https://api.google.com/veo/v1/generate',
     creditsPerSecond: 35, // Assuming $0.175/sec (higher quality) → 35 credits/sec
     maxDuration: 8,
-    aspectRatios: ['16:9', '9:16', '1:1'],
+    aspectRatios: ['16:9', '9:16'], // 1:1 not supported by Google Veo
     resolutions: ['720p', '1080p'],
     quality: 'ultra',
     speed: 'normal',
@@ -207,7 +207,7 @@ export const VIDEO_MODELS: Record<string, VideoModel> = {
     apiEndpoint: 'https://api.google.com/veo/v1/generate',
     creditsPerSecond: 32, // Assuming $0.16/sec → 32 credits/sec
     maxDuration: 8,
-    aspectRatios: ['16:9', '9:16', '1:1'],
+    aspectRatios: ['16:9', '9:16'], // 1:1 not supported by Google Veo
     resolutions: ['720p'],
     quality: 'ultra',
     speed: 'normal',

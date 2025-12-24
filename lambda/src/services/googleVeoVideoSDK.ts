@@ -14,7 +14,7 @@ export interface GoogleVeoVideoRequest {
   imageUrl?: string;
   imageBase64?: string;
   duration?: number;
-  aspectRatio?: '16:9' | '9:16' | '1:1';
+  aspectRatio?: '16:9' | '9:16'; // Google Veo only supports 16:9 and 9:16 (not 1:1)
 }
 
 export interface GoogleVeoVideoResponse {
@@ -51,7 +51,7 @@ export async function generateVideo(request: GoogleVeoVideoRequest): Promise<Goo
       apiKey: GOOGLE_VEO_API_KEY,
     });
 
-    // Prepare config
+    // Prepare config (Google Veo only supports 16:9 and 9:16)
     const config: any = {
       aspectRatio: request.aspectRatio || '16:9',
     };

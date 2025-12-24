@@ -149,6 +149,13 @@ export async function handleGenerateVideo(event: any, headers: any): Promise<API
     if (provider === 'google-veo') {
       console.log('🎯 [VideoGen] Routing to Google Veo provider');
       
+      // Google Veo only supports 16:9 and 9:16 (not 1:1)
+      // If 1:1 is requested, default to 16:9
+      let veoAspectRatio: '16:9' | '9:16' = aspectRatio === '9:16' ? '9:16' : '16:9';
+      if (aspectRatio === '1:1') {
+        console.log('⚠️ [VideoGen] Google Veo does not support 1:1, using 16:9 instead');
+      }
+      
       // Generate video with Google Veo
       result = await generateGoogleVeoVideo({
         modelId: modelId || 'google-veo-3-fast',
@@ -157,7 +164,7 @@ export async function handleGenerateVideo(event: any, headers: any): Promise<API
         imageUrl: finalImageUrl,
         imageBase64,
         duration: parseInt(duration),
-        aspectRatio: aspectRatio as '16:9' | '9:16' | '1:1',
+        aspectRatio: veoAspectRatio,
       });
     } else if (provider === 'fal-ai' || provider === 'kling') {
       // Fal AI Kling models (includes both fal-ai and kling providers)
