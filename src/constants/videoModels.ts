@@ -103,7 +103,7 @@ export const VIDEO_MODELS: Record<string, VideoModel> = {
 
   // Google Veo Models
   // API Cost: $0.15/second (official docs) | 8 seconds = $1.20 | 80% margin → 240 credits
-  // Resolutions: 720p and 1080p (1080p only for 16:9) | Durations: 8s only for Fast
+  // Resolutions: 720p and 1080p (1080p only for 16:9) | Durations: 4s, 6s, 8s for both Fast and standard
   'veo-3.1-fast-generate-preview': {
     id: 'veo-3.1-fast-generate-preview', // Correct Google AI model ID (Fast version)
     displayName: 'Google Veo 3.1 Fast',
@@ -117,11 +117,11 @@ export const VIDEO_MODELS: Record<string, VideoModel> = {
     resolutions: ['720p', '1080p'], // 1080p only for 16:9
     quality: 'high',
     speed: 'fast',
-    features: ['Fast generation', 'Audio generation', '8 seconds', '1080p for 16:9 only'],
-    description: 'Fast video generation with native audio (8s only)',
+    features: ['Fast generation (2x faster)', 'Audio generation', 'Multiple durations (4s, 6s, 8s)', '1080p for 16:9 only'],
+    description: 'Fast video generation with native audio (4s, 6s or 8s)',
     isPremium: false,
     isComingSoon: false,
-    tags: ['Preview', 'Fast', 'Audio', '8s'],
+    tags: ['Preview', 'Fast', 'Audio', '4-8s'],
     pricing: {
       textToVideo: 240,   // $1.20 API cost (8s × $0.15) → 240 credits (80% margin)
       imageToVideo: 360,  // $1.80 API cost (50% extra) → 360 credits (80% margin)

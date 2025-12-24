@@ -76,11 +76,21 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
   const [isCancelled, setIsCancelled] = useState(false);
   const cancelGenerationRef = useRef(false);
   
-  // Get default model
-  const defaultModel = getAvailableVideoModels()[0];
+  // Get default model - prefer Google Veo 3.1 Fast if available, otherwise first available
+  const defaultModel = (() => {
+    const veoFastModel = getAvailableVideoModels().find(m => m.id === 'veo-3.1-fast-generate-preview');
+    return veoFastModel || getAvailableVideoModels()[0];
+  })();
+  
   const [selectedModel, setSelectedModel] = useState<VideoModel>(defaultModel);
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState(defaultModel.aspectRatios[0]);
-  const [selectedDuration, setSelectedDuration] = useState(5);
+  
+  // Default to 9:16 (portrait) if available, otherwise use first aspect ratio
+  const defaultAspectRatio = defaultModel.aspectRatios.includes('9:16') 
+    ? '9:16' 
+    : defaultModel.aspectRatios[0];
+  
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState(defaultAspectRatio);
+  const [selectedDuration, setSelectedDuration] = useState(6); // Default 6 seconds
   const [selectedQuality, setSelectedQuality] = useState<'720p' | '1080p'>('720p');
   const [audioEnabled, setAudioEnabled] = useState(true);
   
@@ -141,16 +151,12 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
   // Get valid durations for the selected model
   const getValidDurations = (): number[] => {
     // Kling models: only 5s or 10s
-    if (selectedModel.provider === 'kling') {
+    if (selectedModel.provider === 'kling' || selectedModel.provider === 'fal-ai') {
       return selectedModel.maxDuration >= 10 ? [5, 10] : [5];
     }
-    // Veo 3.1 (not Fast): 4s, 6s, 8s
-    if (selectedModel.id === 'veo-3.1-generate-preview') {
-      return [4, 6, 8];
-    }
-    // Veo Fast: only 8s
+    // Google Veo models (both Fast and standard): 4s, 6s, 8s
     if (selectedModel.provider === 'google-veo') {
-      return [8];
+      return [4, 6, 8];
     }
     // Default: all durations up to max
     return Array.from({ length: selectedModel.maxDuration }, (_, i) => i + 1);

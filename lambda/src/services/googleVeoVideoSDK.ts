@@ -62,13 +62,18 @@ export async function generateVideo(request: GoogleVeoVideoRequest): Promise<Goo
     }
 
     // Add duration if specified (must be NUMBER not string!)
-    // Google Veo Fast requires duration between 6-8 seconds
-    let duration = request.duration || 6;
-    if (duration < 6) {
-      console.log(`⚠️ [Google Veo] Duration ${duration}s too short, adjusting to 6s (minimum for Fast model)`);
+    // Google Veo 3.1 Fast supports 4, 6, or 8 seconds
+    let duration = request.duration || 8;
+    if (duration < 4) {
+      console.log(`⚠️ [Google Veo] Duration ${duration}s too short, adjusting to 4s (minimum)`);
+      duration = 4;
+    } else if (duration === 5) {
+      console.log(`⚠️ [Google Veo] Duration 5s not supported, adjusting to 6s`);
       duration = 6;
-    }
-    if (duration > 8) {
+    } else if (duration === 7) {
+      console.log(`⚠️ [Google Veo] Duration 7s not supported, adjusting to 8s`);
+      duration = 8;
+    } else if (duration > 8) {
       console.log(`⚠️ [Google Veo] Duration ${duration}s too long, adjusting to 8s (maximum)`);
       duration = 8;
     }
