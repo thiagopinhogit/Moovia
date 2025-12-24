@@ -29,6 +29,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LottieView from 'lottie-react-native';
 import { RootStackParamList } from '../types';
 import { generateImage } from '../services/api';
 import { generateVideo, checkVideoStatus, pollVideoCompletion } from '../services/videoGeneration';
@@ -186,14 +187,6 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
       scale: new Animated.Value(0),
     }))
   ).current;
-
-  // Preload GIF for instant display
-  useEffect(() => {
-    const gifSource = Image.resolveAssetSource(require('../../assets/images/splash-animation.gif'));
-    Image.prefetch(gifSource.uri).catch(() => {
-      console.warn('Failed to preload GIF');
-    });
-  }, []);
 
   useEffect(() => {
     if (initialImageUri) {
@@ -921,12 +914,6 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
 
   return (
     <View style={styles.container}>
-      {/* Hidden preloaded GIF for instant display */}
-      <Image
-        source={require('../../assets/images/splash-animation.gif')}
-        style={{ width: 0, height: 0, opacity: 0 }}
-      />
-      
       {/* Fixed Header with SafeArea */}
       <View style={[styles.headerContainer, { paddingTop: insets.top }]}>
         <View style={styles.header}>

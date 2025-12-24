@@ -17,7 +17,7 @@ const USE_PRODUCTION = false; // Set to false for local development
 const PRODUCTION_BACKEND_URL = 'https://ogkhpn29l4.execute-api.sa-east-1.amazonaws.com/prod';
 
 // Local Development
-const BACKEND_IP = '192.168.15.108';
+const BACKEND_IP = '192.168.0.25';
 const BACKEND_PORT = '3000';
 const LOCAL_BACKEND_URL = `http://${BACKEND_IP}:${BACKEND_PORT}`;
 

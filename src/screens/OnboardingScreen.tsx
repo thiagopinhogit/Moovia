@@ -20,6 +20,7 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import LottieView from 'lottie-react-native';
 import { RootStackParamList } from '../types';
 import VideoCard from '../components/VideoCard';
 import { useSubscription } from '../context/SubscriptionContext';
@@ -290,11 +291,12 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
                 {pages[0].title}
               </Text>
               
-              {/* Wand GIF */}
-              <Image
-                source={require('../../assets/images/splash-animation.gif')}
+              {/* Lottie Animation */}
+              <LottieView
+                source={require('../../assets/images/lottie-simple.json')}
+                autoPlay
+                loop
                 style={[styles.wandGif, isIPad && styles.wandGifIPad]}
-                resizeMode="contain"
               />
             </View>
 

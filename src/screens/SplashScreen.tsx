@@ -6,9 +6,9 @@ import {
   Dimensions,
   StatusBar,
   Animated,
-  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import LottieView from 'lottie-react-native';
 import COLORS from '../constants/colors';
 
 const { width, height } = Dimensions.get('window');
@@ -22,6 +22,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const contentFadeAnim = useRef(new Animated.Value(0)).current;
   const slideUpAnim = useRef(new Animated.Value(50)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const lottieRef = useRef<LottieView>(null);
 
   useEffect(() => {
     // Fade in the entire screen first
@@ -31,7 +32,10 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       useNativeDriver: true,
     }).start();
 
-    // Slide up, fade in and scale animation for content (GIF + Text together)
+    // Start Lottie animation
+    lottieRef.current?.play();
+
+    // Slide up, fade in and scale animation for content (Lottie + Text together)
     Animated.parallel([
       Animated.timing(contentFadeAnim, {
         toValue: 1,
@@ -100,9 +104,13 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
               },
             ]}
           >
-            {/* GIF animado */}
-            <Image
-              source={require('../../assets/images/splash-animation.gif')}
+            {/* Lottie Animation */}
+            <LottieView
+              ref={lottieRef}
+              source={require('../../assets/images/lottie-simple.json')}
+              autoPlay={true}
+              loop={true}
+              speed={1.0}
               style={styles.logo}
               resizeMode="contain"
             />

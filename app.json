@@ -16,9 +16,20 @@
       "supportsTablet": false,
       "buildNumber": "3",
       "bundleIdentifier": "com.moovia.app",
+      "splash": {
+        "image": "./assets/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#0C0D11",
+        "dark": {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0C0D11"
+        }
+      },
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Moovia needs access to your photo library to select videos and photos for AI video creation.",
-        "NSCameraUsageDescription": "Moovia needs access to your camera to record videos and take photos for AI video generation."
+        "NSCameraUsageDescription": "Moovia needs access to your camera to record videos and take photos for AI video generation.",
+        "UILaunchStoryboardName": "SplashScreen"
       }
     },
     "android": {
