@@ -16,6 +16,18 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
     return cachedConnection;
   }
 
+  // If connecting, wait for it
+  if (mongoose.connection.readyState === 2) {
+    console.log('⏳ MongoDB connection in progress, waiting...');
+    await new Promise<void>((resolve, reject) => {
+      mongoose.connection.once('connected', () => resolve());
+      mongoose.connection.once('error', (err) => reject(err));
+      // Timeout after 10 seconds
+      setTimeout(() => reject(new Error('Connection timeout')), 10000);
+    });
+    return mongoose;
+  }
+
   if (!CONFIG.MONGODB_URI) {
     throw new Error('MONGODB_URI environment variable is not set');
   }
@@ -31,6 +43,15 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
       serverSelectionTimeoutMS: 5000,
       bufferCommands: false, // Disable mongoose buffering
     });
+
+    // Wait for connection to be fully established
+    if (mongoose.connection.readyState !== 1) {
+      await new Promise<void>((resolve, reject) => {
+        mongoose.connection.once('connected', () => resolve());
+        mongoose.connection.once('error', (err) => reject(err));
+        setTimeout(() => reject(new Error('Connection timeout')), 10000);
+      });
+    }
 
     cachedConnection = connection;
     console.log('✅ MongoDB connected successfully');

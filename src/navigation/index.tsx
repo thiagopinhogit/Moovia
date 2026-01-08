@@ -12,6 +12,7 @@ import LoadingScreen from '../screens/LoadingScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import PurchaseSuccessScreen from '../screens/PurchaseSuccessScreen';
 import VideoPlayerScreen from '../screens/VideoPlayerScreen';
+import DebugSubscriptionScreen from '../screens/DebugSubscriptionScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const ONBOARDING_KEY = '@moovia_onboarding_completed';
@@ -118,6 +119,15 @@ export default function Navigation() {
           options={{
             presentation: 'fullScreenModal',
             animation: 'fade',
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="DebugSubscription"
+          component={DebugSubscriptionScreen}
+          options={{
+            presentation: 'fullScreenModal',
+            animation: 'slide_from_right',
             headerShown: false,
           }}
         />

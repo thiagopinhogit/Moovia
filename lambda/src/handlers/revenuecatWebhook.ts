@@ -183,8 +183,9 @@ export async function handleRevenueCatWebhook(event: any): Promise<APIGatewayPro
     switch (eventType) {
       case 'INITIAL_PURCHASE':
       case 'RENEWAL':
-        // Subscription purchase or renewal
+        // Can be either subscription or one-time purchase
         if (productMapping.type === 'subscription') {
+          // Handle subscription
           const result = await grantSubscriptionCredits(
             appUserId,
             productMapping.key as keyof typeof SUBSCRIPTION_CREDITS,
@@ -212,6 +213,41 @@ export async function handleRevenueCatWebhook(event: any): Promise<APIGatewayPro
           
           return successResponse({
             message: 'Subscription credits granted successfully',
+            creditsGranted,
+            duplicate: false,
+            userId: appUserId,
+            productId,
+            transactionId: storeTransactionId || eventId,
+          });
+        } else if (productMapping.type === 'purchase') {
+          // Handle one-time purchase (can also come as INITIAL_PURCHASE)
+          const result = await grantPurchaseCredits(
+            appUserId,
+            productMapping.key as keyof typeof PURCHASE_CREDITS,
+            storeTransactionId || eventId
+          );
+          
+          if (!result.success) {
+            console.error('❌ Failed to grant purchase credits:', result.error);
+            return errorResponse(HTTP_STATUS.INTERNAL_ERROR, result.error || 'Failed to grant credits');
+          }
+          
+          // Check if this was a duplicate transaction
+          if (result.duplicate) {
+            console.log(`⚠️ Duplicate purchase detected - credits NOT added (already processed)`);
+            return successResponse({
+              message: 'Purchase already processed (duplicate)',
+              creditsGranted: 0,
+              duplicate: true,
+            });
+          }
+          
+          const creditsGranted = PURCHASE_CREDITS[productMapping.key as keyof typeof PURCHASE_CREDITS];
+          console.log(`✅ Granted ${creditsGranted} credits to ${appUserId}`);
+          console.log('🎉 ====== WEBHOOK SUCCESS ======');
+          
+          return successResponse({
+            message: 'Purchase credits granted successfully',
             creditsGranted,
             duplicate: false,
             userId: appUserId,

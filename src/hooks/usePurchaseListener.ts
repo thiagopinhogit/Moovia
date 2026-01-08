@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Purchases, { CustomerInfo, PurchasesStoreTransaction } from 'react-native-purchases';
 import { RootStackParamList } from '../types';
+import { logAppsFlyerEvent } from '../services/appsflyer';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -79,6 +80,16 @@ export function usePurchaseListener() {
           if (credits) {
             console.log(`📱 [PurchaseListener] Navigating to success screen: ${credits} credits`);
             
+            // 📊 Log AppsFlyer event for credit purchase
+            logAppsFlyerEvent('af_purchase', {
+              af_content_type: 'credits',
+              af_content_id: productId,
+              af_quantity: credits,
+              af_revenue: latestTransaction.revenueCurrency ? parseFloat(latestTransaction.revenueCurrency) : 0,
+              af_currency: 'USD',
+              af_transaction_id: transactionId,
+            });
+            
             setTimeout(() => {
               navigation.navigate('PurchaseSuccess', {
                 purchaseType: 'credits',
@@ -110,6 +121,16 @@ export function usePurchaseListener() {
             const subscriptionName = SUBSCRIPTION_PRODUCTS[productId];
             if (subscriptionName) {
               console.log(`📱 [PurchaseListener] Navigating to success screen: ${subscriptionName}`);
+              
+              // 📊 Log AppsFlyer event for subscription
+              logAppsFlyerEvent('af_subscribe', {
+                af_content_type: 'subscription',
+                af_content_id: productId,
+                af_price: subscription.billingIssueDetectedAt ? 0 : (subscription.originalPurchaseDate ? 1 : 0), // You can get actual price from product
+                af_currency: 'USD',
+                af_transaction_id: currentTransactionId,
+                subscription_name: subscriptionName,
+              });
               
               setTimeout(() => {
                 navigation.navigate('PurchaseSuccess', {

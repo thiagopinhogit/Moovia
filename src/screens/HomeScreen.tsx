@@ -468,6 +468,19 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     loadCredits();
   };
 
+  const handleOpenDebug = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setShowSettingsModal(false);
+      await new Promise(resolve => setTimeout(resolve, 250));
+      // @ts-ignore - dev-only screen
+      navigation.navigate('DebugSubscription');
+    } catch (error) {
+      console.error('Error opening debug screen:', error);
+      Alert.alert('Error', 'Failed to open debug screen');
+    }
+  };
+
   const handleRecentItemPress = (item: HistoryItem) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // Go directly to Edit screen with image-to-video as default
@@ -855,6 +868,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 </Text>
                 </TouchableOpacity>
             </View>
+
+            {__DEV__ && (
+              <View style={styles.settingsSection}>
+                <Text style={styles.settingsLabel}>Developer</Text>
+                <TouchableOpacity style={styles.settingsRow} onPress={handleOpenDebug}>
+                  <Ionicons name="bug-outline" size={20} color={COLORS.primary.violet} />
+                  <Text style={styles.settingsRowText}>Debug (Subscriptions + AppsFlyer)</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             <TouchableOpacity 
               style={styles.settingsCloseButton}

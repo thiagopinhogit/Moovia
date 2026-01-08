@@ -23,6 +23,7 @@ export type RootStackParamList = {
   Edit: { effect?: EditEffect; imageUri?: string; originalImageUri?: string; aiModel?: string; prompt?: string };
   Loading: { imageUri: string; description: string; effect?: EditEffect };
   History: undefined;
+  DebugSubscription: undefined;
   PurchaseSuccess: {
     purchaseType: 'credits' | 'subscription';
     credits?: number;

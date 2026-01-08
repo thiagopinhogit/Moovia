@@ -7,6 +7,7 @@ import Superwall, {
 } from '@superwall/react-native-superwall';
 import { Platform } from 'react-native';
 import * as Application from 'expo-application';
+import { setAppsFlyerCustomerUserId } from './appsflyer';
 
 // Configuration constants - Replace with your actual keys
 const REVENUECAT_API_KEYS = {
@@ -83,6 +84,16 @@ class SubscriptionService {
       } catch (loginError) {
         console.warn('⚠️  Failed to login with device ID, continuing with anonymous ID:', loginError);
         // Continue with initialization even if login fails
+      }
+
+      // Set AppsFlyer Customer User ID (recommended) using RevenueCat's user ID
+      try {
+        const rcUserId = await Purchases.getAppUserID();
+        if (rcUserId) {
+          await setAppsFlyerCustomerUserId(rcUserId);
+        }
+      } catch (afUserIdError) {
+        console.warn('⚠️  Failed to set AppsFlyer Customer User ID:', afUserIdError);
       }
 
       console.log('🎨 [SubscriptionService] Configuring Superwall...');
@@ -420,6 +431,9 @@ class SubscriptionService {
       if (this.superwallInstance) {
         await this.superwallInstance.setUserAttributes({ userId });
       }
+
+      // Keep AppsFlyer aligned with the app's canonical user identity
+      await setAppsFlyerCustomerUserId(userId);
       
       console.log('User identified:', userId);
     } catch (error) {

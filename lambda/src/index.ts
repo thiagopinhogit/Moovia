@@ -79,8 +79,8 @@ export async function handler(event: any): Promise<APIGatewayProxyResult> {
     return handleGenerateVideo(event, headers);
   }
   
-  // Route to video status check (GET /video-status/:taskId)
-  if (httpMethod === 'GET' && (path.includes('/video-status/') || path.match(/\/video-status\/[^/]+$/))) {
+  // Route to video status check (GET /video-status/:taskId or GET /video-status?taskId=...)
+  if (httpMethod === 'GET' && (path.includes('/video-status') || path === '/video-status')) {
     console.log('📊 Routing to video status handler');
     await connectToDatabase();
     return handleVideoStatus(event, headers);

@@ -2,11 +2,12 @@
   "expo": {
     "name": "Moovia",
     "slug": "moovia-ai-video",
-    "version": "1.0.0",
+    "scheme": "moovia",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -14,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "buildNumber": "3",
+      "buildNumber": "4",
       "bundleIdentifier": "com.moovia.app",
       "splash": {
         "image": "./assets/splash-icon.png",
@@ -29,6 +30,7 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Moovia needs access to your photo library to select videos and photos for AI video creation.",
         "NSCameraUsageDescription": "Moovia needs access to your camera to record videos and take photos for AI video generation.",
+        "NSUserTrackingUsageDescription": "We use device data to measure ad performance and improve the app experience.",
         "UILaunchStoryboardName": "SplashScreen"
       }
     },

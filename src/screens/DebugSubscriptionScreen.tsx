@@ -7,8 +7,11 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import subscriptionService from '../services/subscription';
+import { getAppsFlyerUid, logAppsFlyerEvent } from '../services/appsflyer';
+import * as Application from 'expo-application';
 
 /**
  * DEBUG SCREEN - Subscription Testing
@@ -26,6 +29,8 @@ export default function DebugSubscriptionScreen() {
   const [loading, setLoading] = useState(false);
   const [isPro, setIsPro] = useState<boolean | null>(null);
   const [productIds, setProductIds] = useState<string[]>([]);
+  const [appsFlyerUid, setAppsFlyerUid] = useState<string | null>(null);
+  const [idfv, setIdfv] = useState<string | null>(null);
 
   const handleDebugReport = async () => {
     setLoading(true);
@@ -122,6 +127,58 @@ export default function DebugSubscriptionScreen() {
     }
   };
 
+  const handleGetAppsFlyerUid = async () => {
+    setLoading(true);
+    try {
+      const uid = await getAppsFlyerUid();
+      setAppsFlyerUid(uid);
+      Alert.alert('🧩 AppsFlyer UID', uid ? uid : 'No UID returned (check logs)');
+    } catch (error) {
+      console.error('Error getting AppsFlyer UID:', error);
+      Alert.alert('❌ Error', 'Failed to get AppsFlyer UID');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendAppsFlyerTestEvent = async () => {
+    setLoading(true);
+    try {
+      const ok = await logAppsFlyerEvent('af_test_event', {
+        source: 'debug_screen',
+        ts: new Date().toISOString(),
+      });
+      if (ok) {
+        Alert.alert('✅ Sent', 'Sent AppsFlyer event "af_test_event". Check AppsFlyer Live event viewer.');
+      } else {
+        Alert.alert('❌ Not sent', 'AppsFlyer SDK not initialized (missing Dev Key) or logEvent failed. Check app logs for [AppsFlyer].');
+      }
+    } catch (error) {
+      console.error('Error sending AppsFlyer test event:', error);
+      Alert.alert('❌ Error', 'Failed to send AppsFlyer test event');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGetIdfv = async () => {
+    if (Platform.OS !== 'ios') {
+      Alert.alert('Not iOS', 'IDFV is only available on iOS.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const vendorId = await Application.getIosIdForVendorAsync();
+      setIdfv(vendorId ?? null);
+      Alert.alert('🆔 IDFV', vendorId ? vendorId : 'No IDFV returned');
+    } catch (error) {
+      console.error('Error getting IDFV:', error);
+      Alert.alert('❌ Error', 'Failed to get IDFV');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -159,6 +216,26 @@ export default function DebugSubscriptionScreen() {
         </View>
       )}
 
+      {appsFlyerUid && (
+        <View style={styles.productIdsCard}>
+          <Text style={styles.cardTitle}>🧩 AppsFlyer UID:</Text>
+          <Text style={styles.productId}>{appsFlyerUid}</Text>
+          <Text style={styles.warningText}>
+            Use this UID to locate the device in AppsFlyer (Testing / Raw Data)
+          </Text>
+        </View>
+      )}
+
+      {idfv && (
+        <View style={styles.productIdsCard}>
+          <Text style={styles.cardTitle}>🆔 IDFV (iOS):</Text>
+          <Text style={styles.productId}>{idfv}</Text>
+          <Text style={styles.warningText}>
+            Use this value in AppsFlyer “Register test devices” when only IDFV/IDFA are available
+          </Text>
+        </View>
+      )}
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>📊 Diagnostic Tools</Text>
         
@@ -181,6 +258,34 @@ export default function DebugSubscriptionScreen() {
           title="👑 Check Pro Status"
           subtitle="Verify if user has active subscription"
           onPress={handleCheckProStatus}
+          disabled={loading}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>📈 AppsFlyer (Attribution)</Text>
+
+        <DebugButton
+          title="🧩 Get AppsFlyer UID"
+          subtitle="Fetch the device AppsFlyer ID (for verification)"
+          onPress={handleGetAppsFlyerUid}
+          disabled={loading}
+          isPrimary
+        />
+
+        {Platform.OS === 'ios' && (
+          <DebugButton
+            title="🆔 Get IDFV (iOS)"
+            subtitle="Copy/paste into AppsFlyer test devices (IDFV)"
+            onPress={handleGetIdfv}
+            disabled={loading}
+          />
+        )}
+
+        <DebugButton
+          title="📨 Send AppsFlyer Test Event"
+          subtitle='Logs event "af_test_event"'
+          onPress={handleSendAppsFlyerTestEvent}
           disabled={loading}
         />
       </View>

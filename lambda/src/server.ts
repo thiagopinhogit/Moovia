@@ -200,12 +200,62 @@ app.post('/generate-video', async (req: Request, res: Response) => {
   }
 });
 
-// Lambda endpoint - Check Video Status
+// Lambda endpoint - Check Video Status (with query parameter)
+// Support both query parameter (?taskId=...) and path parameter
+app.get('/video-status', async (req: Request, res: Response) => {
+  // Extract taskId from query parameter
+  const taskId = req.query.taskId as string;
+  console.log('🔍 Checking video status for task (query):', taskId);
+
+  if (!taskId) {
+    return res.status(400).json({
+      success: false,
+      error: 'taskId query parameter is required',
+    });
+  }
+
+  try {
+    // Create Lambda event object with query parameter
+    const event = {
+      headers: req.headers,
+      httpMethod: 'GET',
+      path: '/video-status',
+      rawPath: '/video-status',
+      queryStringParameters: { taskId },
+      requestContext: {
+        requestId: `local-${Date.now()}`,
+        identity: {
+          sourceIp: req.ip,
+        },
+      },
+    };
+
+    // Call Lambda handler
+    const result = await handler(event as any);
+
+    // Parse Lambda response
+    const statusCode = result.statusCode || 200;
+    const body = JSON.parse(result.body);
+
+    console.log('📤 Video status response:', { statusCode, success: body.success, status: body.status });
+
+    // Send response
+    res.status(statusCode).json(body);
+  } catch (error) {
+    console.error('❌ Video status check server error:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Lambda endpoint - Check Video Status (with path parameter)
 // Use wildcard to support taskIds with slashes (like Google Veo operations)
 app.get('/video-status/*', async (req: Request, res: Response) => {
   // Extract taskId from path (everything after /video-status/)
   const taskId = req.params[0]; // Wildcard captures everything
-  console.log('🔍 Checking video status for task:', taskId);
+  console.log('🔍 Checking video status for task (path):', taskId);
 
   try {
     // Create Lambda event object

@@ -25,6 +25,7 @@ import { RootStackParamList } from '../types';
 import VideoCard from '../components/VideoCard';
 import { useSubscription } from '../context/SubscriptionContext';
 import COLORS from '../constants/colors';
+import { logAppsFlyerEvent } from '../services/appsflyer';
 
 const { width, height } = Dimensions.get('window');
 const isIPad = width >= 768; // iPad detection
@@ -237,6 +238,12 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
   const completeOnboarding = async () => {
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+      // 📊 Log AppsFlyer event for completing registration/onboarding
+      logAppsFlyerEvent('af_complete_registration', {
+        af_registration_method: 'onboarding',
+      });
+      
       await AsyncStorage.setItem(STORAGE_KEY, 'true');
       navigation.replace('Home');
     } catch (error) {

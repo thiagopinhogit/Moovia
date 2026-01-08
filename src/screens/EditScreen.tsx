@@ -42,6 +42,7 @@ import { CREDIT_COSTS } from '../constants/credits';
 import { getAvailableVideoModels, getVideoModelById, getModelsByProviderGrouped, VideoModel, ModelProvider } from '../constants/videoModels';
 import COLORS from '../constants/colors';
 import * as Application from 'expo-application';
+import { logAppsFlyerEvent } from '../services/appsflyer';
 
 const { width } = Dimensions.get('window');
 
@@ -561,6 +562,16 @@ export default function EditScreen({ navigation, route }: EditScreenProps) {
         console.log('✅ [EditScreen] Video generation initiated!');
         console.log('  - Task ID:', result.taskId);
         console.log('  - Estimated time:', result.estimatedTime, 'seconds');
+        
+        // 📊 Log AppsFlyer event for video generation
+        logAppsFlyerEvent('af_content_create', {
+          af_content_type: 'video',
+          af_content_id: selectedModel.id,
+          model_name: selectedModel.displayName,
+          duration: selectedDuration,
+          aspect_ratio: selectedAspectRatio,
+          has_image: !!imageBase64,
+        });
         
         // Haptic de sucesso
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

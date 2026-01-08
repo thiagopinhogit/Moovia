@@ -244,7 +244,12 @@ export const checkVideoStatus = async (
   try {
     console.log('🔍 [VideoGen] Checking status for task:', taskId);
 
-    const response = await fetch(`${BACKEND_API_URL}/video-status/${taskId}`, {
+    // Use query parameter to handle Google Veo's complex taskIds with slashes
+    // Google Veo taskIds look like: models/veo-3.1-fast-generate-preview/operations/abc123
+    const encodedTaskId = encodeURIComponent(taskId);
+    const url = `${BACKEND_API_URL}/video-status?taskId=${encodedTaskId}`;
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

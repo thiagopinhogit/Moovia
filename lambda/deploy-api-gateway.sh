@@ -88,6 +88,14 @@ aws apigatewayv2 create-route \
     --target integrations/$INTEGRATION_ID \
     --region $REGION > /dev/null 2>&1 || echo -e "${YELLOW}    (já existe)${NC}"
 
+# Rota 3b: GET /video-status (with query parameter ?taskId=...)
+echo -e "${BLUE}  📝 GET /video-status${NC}"
+aws apigatewayv2 create-route \
+    --api-id $API_ID \
+    --route-key "GET /video-status" \
+    --target integrations/$INTEGRATION_ID \
+    --region $REGION > /dev/null 2>&1 || echo -e "${YELLOW}    (já existe)${NC}"
+
 # Rota 4: POST /revenuecat-webhook
 echo -e "${BLUE}  📝 POST /revenuecat-webhook${NC}"
 aws apigatewayv2 create-route \

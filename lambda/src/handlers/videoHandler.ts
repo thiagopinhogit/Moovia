@@ -309,15 +309,36 @@ export async function handleGenerateVideo(event: any, headers: any): Promise<API
  */
 export async function handleVideoStatus(event: any, headers: any): Promise<APIGatewayProxyResult> {
   try {
-    // Extract taskId from path - handle both simple IDs and paths with slashes
-    const path = event.path || event.rawPath || '';
-    // Remove /video-status/ prefix (and optional /prod/ stage) and get everything after it
-    const taskId = path
-      .replace(/^\/prod\/video-status\//, '')  // Remove /prod/video-status/
-      .replace(/^\/video-status\//, '');        // Or just /video-status/
+    // Extract taskId from path OR query parameter
+    // Priority: query parameter > path parameter (to handle Google Veo's complex taskIds with slashes)
+    let taskId = '';
+    
+    // Try query parameter first (best for complex taskIds)
+    if (event.queryStringParameters?.taskId) {
+      taskId = event.queryStringParameters.taskId;
+      console.log('📍 [VideoStatus] Using taskId from query parameter');
+    } else {
+      // Fall back to path parameter
+      const path = event.path || event.rawPath || '';
+      // Remove /video-status/ prefix (and optional /prod/ stage) and get everything after it
+      taskId = path
+        .replace(/^\/prod\/video-status\//, '')  // Remove /prod/video-status/
+        .replace(/^\/video-status\//, '');        // Or just /video-status/
+      
+      console.log('📍 [VideoStatus] Using taskId from path parameter');
+    }
+
+    // Decode taskId (to handle URL-encoded slashes from Google Veo operation names)
+    // Google Veo taskIds look like: models%2Fveo-3.1-fast-generate-preview%2Foperations%2Fabc123
+    // After decoding: models/veo-3.1-fast-generate-preview/operations/abc123
+    try {
+      taskId = decodeURIComponent(taskId);
+    } catch (error) {
+      console.warn('⚠️ [VideoStatus] Failed to decode taskId, using as-is:', taskId);
+    }
 
     if (!taskId) {
-      return errorResponse(HTTP_STATUS.BAD_REQUEST, 'taskId is required', headers);
+      return errorResponse(HTTP_STATUS.BAD_REQUEST, 'taskId is required (use /video-status/:taskId or /video-status?taskId=...)', headers);
     }
 
     console.log(`🔍 [VideoStatus] Checking status for task: ${taskId}`);

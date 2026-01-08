@@ -5,6 +5,7 @@ import Navigation from './src/navigation';
 import { SubscriptionProvider } from './src/context/SubscriptionContext';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
+import { initAppsFlyer } from './src/services/appsflyer';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -15,6 +16,11 @@ export default function App() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+
+  useEffect(() => {
+    // Initialize AppsFlyer as early as possible (safe even if fonts are still loading).
+    initAppsFlyer();
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {

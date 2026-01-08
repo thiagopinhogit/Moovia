@@ -257,11 +257,22 @@ export async function checkVideoStatus(operationName: string): Promise<GoogleVeo
         console.error('❌ [Google Veo] No video URL in response');
         console.error('📦 [Google Veo] Available response keys:', Object.keys(operation.response || {}));
         
+        // Check if video was filtered by Google's safety policies
+        let errorMessage = 'No video URL in response';
+        
+        if (operation.response?.generateVideoResponse?.raiMediaFilteredCount > 0) {
+          const reasons = operation.response.generateVideoResponse.raiMediaFilteredReasons || [];
+          if (reasons.length > 0) {
+            errorMessage = reasons[0]; // Use the first reason
+            console.error('🛡️ [Google Veo] Content filtered by safety policies:', errorMessage);
+          }
+        }
+        
         return {
           success: false,
           taskId: operationName,
           status: 'failed',
-          error: 'No video URL in response',
+          error: errorMessage,
         };
       }
     } else {
